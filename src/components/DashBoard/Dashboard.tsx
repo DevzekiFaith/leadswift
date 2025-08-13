@@ -1,51 +1,251 @@
-import { useEffect } from "react";
-import { useQuery } from "react-query";
+import { useState } from "react";
 import { supabase } from "../../../lib/supabaseClient";
-import LeadCard from "../LeadCard/LeadCard";
+import type { User } from "@supabase/supabase-js";
 
-async function fetchLeads() {
-  const { data, error } = await supabase.from("leads").select("*").order("created_at", { ascending: false }).limit(50);
-  if (error) throw error;
-  return data;
-}
+// Mock data for demonstration - replace with real data from your backend
+const mockLeads = [
+  {
+    id: 1,
+    name: "Sarah Johnson",
+    company: "TechCorp Solutions",
+    country: "US",
+    status: "Hot",
+    interestLevel: 85,
+    budget: "$50,000",
+    industry: "Technology"
+  },
+  {
+    id: 2,
+    name: "James Ochieng",
+    company: "Nairobi Digital Hub",
+    country: "KE",
+    status: "New",
+    interestLevel: 65,
+    budget: "$15,000",
+    industry: "Marketing"
+  },
+  {
+    id: 3,
+    name: "Emma Williams",
+    company: "London Fintech Ltd",
+    country: "GB",
+    status: "Closed",
+    interestLevel: 95,
+    budget: "$75,000",
+    industry: "Finance"
+  }
+];
 
-export default function Dashboard({ user }: { user: any }) {
-  const { data: leads, isLoading, refetch } = useQuery("leads", fetchLeads);
+const sidebarItems = [
+  { name: "Leads", icon: "👥", active: true },
+  { name: "Pitch Composer", icon: "✨", active: false },
+  { name: "Compliance", icon: "✅", active: false },
+  { name: "Settings", icon: "⚙️", active: false },
+];
 
-  useEffect(() => {
-    // optional: subscribe to realtime updates
-    const sub = supabase
-      .from("leads")
-      .on("*", () => refetch())
-      .subscribe();
+export default function Dashboard({ user }: { user: User }) {
+  const [activeSection, setActiveSection] = useState("Leads");
 
-    return () => { supabase.removeSubscription(sub); };
-  }, [refetch]);
+  const signOut = async () => {
+    await supabase.auth.signOut();
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "Hot": return "bg-red-100 text-red-800";
+      case "New": return "bg-blue-100 text-blue-800";
+      case "Closed": return "bg-green-100 text-green-800";
+      default: return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getCountryFlag = (countryCode: string) => {
+    const flags: { [key: string]: string } = {
+      "US": "🇺🇸",
+      "KE": "🇰🇪", 
+      "GB": "🇬🇧",
+      "CA": "🇨🇦",
+      "AU": "🇦🇺"
+    };
+    return flags[countryCode] || "🌍";
+  };
 
   return (
-    <div className="min-h-screen p-8">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">LeadSwift</h1>
-        <div className="flex items-center gap-3">
-          <button className="px-4 py-2 rounded bg-white border">Import Leads</button>
-          <button className="px-4 py-2 rounded bg-gradient-to-r from-primary to-accent text-white">Generate Leads</button>
+    <div className="min-h-screen bg-background flex">
+      {/* Sidebar */}
+      <div className="w-64 bg-white shadow-lg border-r border-gray-200">
+        {/* Logo */}
+        <div className="p-6 border-b border-gray-200">
+          <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+            LeadSwift
+          </h1>
+        </div>
+
+        {/* Navigation */}
+        <nav className="p-4 space-y-2">
+          {sidebarItems.map((item) => (
+            <button
+              key={item.name}
+              onClick={() => setActiveSection(item.name)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all ${
+                activeSection === item.name
+                  ? "bg-gradient-primary text-white shadow-md"
+                  : "text-text-primary hover:bg-gray-50"
+              }`}
+            >
+              <span className="text-lg">{item.icon}</span>
+              <span className="font-medium">{item.name}</span>
+            </button>
+          ))}
+        </nav>
+
+        {/* User Profile */}
+        <div className="absolute bottom-0 w-64 p-4 border-t border-gray-200 bg-white">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 bg-gradient-primary rounded-full flex items-center justify-center text-white font-semibold">
+              {user.email?.charAt(0).toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-text-primary truncate">
+                {user.email}
+              </p>
+              <p className="text-xs text-gray-500">Pro Plan</p>
+            </div>
+          </div>
+          <button
+            onClick={signOut}
+            className="w-full text-sm text-gray-600 hover:text-text-primary transition-colors"
+          >
+            Sign out
+          </button>
         </div>
       </div>
 
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2">
-          <div className="space-y-4">
-            {isLoading && <div>Loading leads…</div>}
-            {!isLoading && (leads || []).length === 0 && <div>No leads yet — try Generate Leads.</div>}
-            {leads?.map((lead: any) => <LeadCard key={lead.id} lead={lead} />)}
+      {/* Main Content */}
+      <div className="flex-1 overflow-hidden">
+        {/* Header */}
+        <header className="bg-white border-b border-gray-200 px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-text-primary">
+                {activeSection}
+              </h1>
+              <p className="text-gray-600 mt-1">
+                Manage your leads and close deals faster with AI
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button className="px-4 py-2 border border-gray-300 rounded-lg text-text-primary hover:bg-gray-50 transition-colors">
+                Import Leads
+              </button>
+              <button className="px-6 py-2 bg-gradient-primary text-white rounded-lg hover:opacity-90 transition-all transform hover:scale-[1.02]">
+                🚀 Generate Leads
+              </button>
+            </div>
           </div>
-        </div>
+        </header>
 
-        <aside className="bg-white rounded-lg p-4 shadow">
-          <h3 className="font-semibold mb-2">AI Pitch Assistant</h3>
-          <p className="text-sm text-gray-600">Select a lead to compose a pitch. AI suggestions will appear here.</p>
-        </aside>
-      </section>
+        {/* Content Area */}
+        <main className="p-8 h-full overflow-y-auto">
+          {activeSection === "Leads" && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              {mockLeads.map((lead) => (
+                <div
+                  key={lead.id}
+                  className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-200 hover:scale-[1.02]"
+                >
+                  {/* Lead Header */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{getCountryFlag(lead.country)}</span>
+                      <div>
+                        <h3 className="font-semibold text-text-primary">{lead.name}</h3>
+                        <p className="text-sm text-gray-600">{lead.company}</p>
+                      </div>
+                    </div>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(lead.status)}`}>
+                      {lead.status}
+                    </span>
+                  </div>
+
+                  {/* Lead Details */}
+                  <div className="space-y-2 mb-4">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Interest Level:</span>
+                      <span className="font-medium text-text-primary">{lead.interestLevel}%</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Budget:</span>
+                      <span className="font-medium text-text-primary">{lead.budget}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Industry:</span>
+                      <span className="font-medium text-text-primary">{lead.industry}</span>
+                    </div>
+                  </div>
+
+                  {/* Interest Level Bar */}
+                  <div className="mb-4">
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-gradient-primary h-2 rounded-full transition-all duration-500"
+                        style={{ width: `${lead.interestLevel}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  {/* Action Button */}
+                  <button className="w-full py-3 bg-gradient-primary text-white rounded-lg font-semibold hover:opacity-90 transition-all transform hover:scale-[1.02] active:scale-[0.98]">
+                    ✨ Pitch Now
+                  </button>
+                </div>
+              ))}
+
+              {/* Add New Lead Card */}
+              <div className="bg-white rounded-xl shadow-sm border-2 border-dashed border-gray-300 p-6 flex flex-col items-center justify-center text-center hover:border-primary-accent transition-colors cursor-pointer">
+                <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center mb-4">
+                  <span className="text-white text-xl">+</span>
+                </div>
+                <h3 className="font-semibold text-text-primary mb-2">Add New Lead</h3>
+                <p className="text-sm text-gray-600">
+                  Import leads or let AI find them for you
+                </p>
+              </div>
+            </div>
+          )}
+
+          {activeSection === "Pitch Composer" && (
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">✨</div>
+              <h2 className="text-2xl font-bold text-text-primary mb-2">Pitch Composer</h2>
+              <p className="text-gray-600">Coming soon - AI-powered pitch generation</p>
+            </div>
+          )}
+
+          {activeSection === "Compliance" && (
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">✅</div>
+              <h2 className="text-2xl font-bold text-text-primary mb-2">Compliance Checker</h2>
+              <p className="text-gray-600">Coming soon - AI compliance scanning</p>
+            </div>
+          )}
+
+          {activeSection === "Settings" && (
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">⚙️</div>
+              <h2 className="text-2xl font-bold text-text-primary mb-2">Settings</h2>
+              <p className="text-gray-600">Coming soon - Profile and integrations</p>
+            </div>
+          )}
+        </main>
+      </div>
+
+      {/* Floating AI Assistant */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <button className="w-14 h-14 bg-gradient-primary rounded-full shadow-lg flex items-center justify-center text-white text-xl hover:scale-110 transition-transform animate-float">
+          🤖
+        </button>
+      </div>
     </div>
   );
 }
