@@ -205,7 +205,7 @@ export default function LeadDiscovery({ user, userPlan }: LeadDiscoveryProps) {
   };
 
   return (
-    <div className="p-8 bg-background min-h-screen">
+    <div className="p-8  min-h-screen">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-text-primary mb-2">

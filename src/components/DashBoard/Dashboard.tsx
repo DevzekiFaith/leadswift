@@ -91,10 +91,10 @@ export default function Dashboard({ user }: { user: User }) {
   return (
     <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
-      <div className="w-64 bg-white shadow-lg border-r border-gray-200">
+      <div className="w-64 bg-black shadow-lg border-r border-gray-200">
         {/* Logo */}
         <div className="p-6 border-b border-gray-200">
-          <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+          <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-white">
             LeadSwift
           </h1>
         </div>
@@ -107,10 +107,10 @@ export default function Dashboard({ user }: { user: User }) {
               <button
                 key={item.name}
                 onClick={() => setActiveSection(item.name)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all ${
+                className={`w-full flex items-center gap-3 px-4 py-3 text-white rounded-lg text-left transition-all ${
                   activeSection === item.name
-                    ? "bg-gradient-primary text-white shadow-md"
-                    : "text-text-primary hover:bg-gray-50"
+                    ? "bg-gradient-primary text-white shadow-md border"
+                    : "text-white hover:bg-gray-50"
                 }`}
               >
                 <IconComponent className="text-lg" />
@@ -121,16 +121,16 @@ export default function Dashboard({ user }: { user: User }) {
         </nav>
 
         {/* User Profile */}
-        <div className="absolute bottom-0 w-64 p-4 border-t border-gray-200 bg-white">
+        <div className="absolute bottom-0 w-64 p-4 border-t border-gray-200 bg-black">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 bg-gradient-primary rounded-full flex items-center justify-center text-white font-semibold">
               {user.email?.charAt(0).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-text-primary truncate">
+              <p className="text-sm font-medium text-white truncate">
                 {user.email}
               </p>
-              <p className="text-xs text-gray-500">Pro Plan</p>
+              <p className="text-xs text-white">Pro Plan</p>
             </div>
           </div>
           <button
