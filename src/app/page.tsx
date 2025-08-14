@@ -29,7 +29,7 @@ const Home: NextPage = () => {
         <title>LeadSwift - AI-Powered Global Client Acquisition</title>
         <meta name="description" content="Start closing deals faster with AI-powered lead generation and personalized outreach" />
       </Head>
-      <main className="min-h-screen bg-background">
+      <main className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
         {!session?.user ? <AuthCard /> : <Dashboard user={session.user} />}
       </main>
     </>

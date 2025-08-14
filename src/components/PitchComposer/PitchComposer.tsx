@@ -112,6 +112,13 @@ P.S. I'm based in [Your Location] but work extensively with African markets - gi
     setIsTyping(false);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
 
@@ -176,96 +183,135 @@ P.S. I'm based in [Your Location] but work extensively with African markets - gi
   };
 
   return (
-    <div className="h-full flex bg-background">
+    <div className="h-full flex bg-gradient-to-br from-gray-900 via-gray-800 to-black">
       {/* Left Sidebar - Lead Profile */}
-      <div className="w-80 bg-white border-r border-gray-200 p-6 overflow-y-auto">
+      <div className="w-80 bg-gray-900/50 backdrop-blur-sm border-r border-gray-700/50 p-6 overflow-y-auto shadow-2xl">
         <div className="mb-6">
-          <h2 className="text-xl font-semibold text-text-primary mb-4">Lead Profile</h2>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
+              <span className="text-white text-sm">👤</span>
+            </div>
+            <h2 className="text-2xl font-bold text-white">Lead Profile</h2>
+          </div>
           
           {/* Profile Header */}
-          <div className="bg-gradient-primary rounded-lg p-4 text-white mb-4">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-xl font-bold">
+          <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-6 text-white mb-6 hover:shadow-lg hover:shadow-purple-500/10 transition-all duration-300">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-14 h-14 bg-gradient-primary rounded-xl flex items-center justify-center text-xl font-bold shadow-lg">
                 {mockLeadProfile.name.charAt(0)}
               </div>
               <div>
-                <h3 className="font-semibold">{mockLeadProfile.name}</h3>
-                <p className="text-sm opacity-90">{mockLeadProfile.title}</p>
+                <h3 className="text-lg font-bold text-white">{mockLeadProfile.name}</h3>
+                <p className="text-sm text-gray-300">{mockLeadProfile.title}</p>
               </div>
             </div>
-            <p className="text-sm opacity-90">{mockLeadProfile.company}</p>
+            <p className="text-sm text-gray-300 font-medium">{mockLeadProfile.company}</p>
           </div>
 
           {/* Profile Details */}
           <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-gray-600">Location</label>
-              <p className="text-text-primary">{mockLeadProfile.location}</p>
+            <div className="bg-gray-700/30 rounded-xl p-4">
+              <label className="text-sm font-medium text-gray-400 mb-2 block">📍 Location</label>
+              <p className="text-white font-semibold">{mockLeadProfile.location}</p>
             </div>
             
-            <div>
-              <label className="text-sm font-medium text-gray-600">Industry</label>
-              <p className="text-text-primary">{mockLeadProfile.industry}</p>
+            <div className="bg-gray-700/30 rounded-xl p-4">
+              <label className="text-sm font-medium text-gray-400 mb-2 block">🏢 Industry</label>
+              <p className="text-white font-semibold">{mockLeadProfile.industry}</p>
             </div>
             
-            <div>
-              <label className="text-sm font-medium text-gray-600">Budget Range</label>
-              <p className="text-text-primary">{mockLeadProfile.budget}</p>
+            <div className="bg-gray-700/30 rounded-xl p-4">
+              <label className="text-sm font-medium text-gray-400 mb-2 block">💰 Budget Range</label>
+              <p className="text-white font-semibold">{mockLeadProfile.budget}</p>
             </div>
             
-            <div>
-              <label className="text-sm font-medium text-gray-600">Interest Level</label>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 bg-gray-200 rounded-full h-2">
+            <div className="bg-gray-700/30 rounded-xl p-4">
+              <label className="text-sm font-medium text-gray-400 mb-3 block">⚡ Interest Level</label>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 bg-gray-600 rounded-full h-3 overflow-hidden">
                   <div 
-                    className="bg-gradient-primary h-2 rounded-full transition-all duration-500"
+                    className="bg-gradient-primary h-3 rounded-full transition-all duration-500 relative overflow-hidden"
                     style={{ width: `${mockLeadProfile.interestLevel}%` }}
-                  ></div>
+                  >
+                    <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                  </div>
                 </div>
-                <span className="text-sm font-medium text-text-primary">{mockLeadProfile.interestLevel}%</span>
+                <span className="text-lg font-bold bg-gradient-primary bg-clip-text text-transparent">{mockLeadProfile.interestLevel}%</span>
               </div>
             </div>
             
-            <div>
-              <label className="text-sm font-medium text-gray-600">Pain Points</label>
-              <ul className="mt-1 space-y-1">
+            <div className="bg-gray-700/30 rounded-xl p-4">
+              <label className="text-sm font-medium text-gray-400 mb-3 block flex items-center gap-2">
+                <span className="text-lg">🎯</span>
+                Pain Points
+              </label>
+              <ul className="space-y-3">
                 {mockLeadProfile.painPoints.map((point, index) => (
-                  <li key={index} className="text-sm text-text-primary flex items-start">
-                    <span className="text-red-500 mr-2">•</span>
-                    {point}
+                  <li key={index} className="group flex items-start gap-3 p-3 bg-gradient-to-r from-red-500/10 to-orange-500/10 rounded-xl border border-red-500/20 hover:border-red-400/40 transition-all duration-300 hover:scale-[1.02]">
+                    <div className="flex-shrink-0 w-6 h-6 bg-gradient-to-r from-red-500 to-orange-500 rounded-full flex items-center justify-center mt-0.5">
+                      <span className="text-white text-xs font-bold">!</span>
+                    </div>
+                    <span className="text-sm text-white font-medium leading-relaxed group-hover:text-red-100 transition-colors duration-300">
+                      {point}
+                    </span>
                   </li>
                 ))}
               </ul>
             </div>
             
-            <div>
-              <label className="text-sm font-medium text-gray-600">Recent Activity</label>
-              <p className="text-sm text-text-primary bg-blue-50 p-2 rounded-lg">
-                {mockLeadProfile.recentActivity}
-              </p>
+            <div className="bg-gray-700/30 rounded-xl p-4">
+              <label className="text-sm font-medium text-gray-400 mb-3 block flex items-center gap-2">
+                <span className="text-lg">📈</span>
+                Recent Activity
+              </label>
+              <div className="relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-indigo-500/10 rounded-xl"></div>
+                <div className="relative p-4 bg-gradient-to-br from-blue-500/20 to-purple-600/20 backdrop-blur-sm rounded-xl border border-blue-400/30 hover:border-blue-300/50 transition-all duration-300 hover:scale-[1.02] group">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                      <span className="text-white text-lg">🔥</span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-white font-medium leading-relaxed group-hover:text-blue-100 transition-colors duration-300">
+                        {mockLeadProfile.recentActivity}
+                      </p>
+                      <div className="flex items-center gap-2 mt-2 text-xs text-blue-200">
+                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                        <span>Hot lead - act fast!</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs">⚡</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Right Side - Chat Interface */}
-      <div className="flex-1 flex flex-col">
-        {/* Chat Header */}
-        <div className="bg-white border-b border-gray-200 p-4">
+      <div className="flex-1 flex flex-col bg-gray-800/30 backdrop-blur-sm">
+        {/* Header */}
+        <div className="border-b border-gray-700/50 p-6 bg-gray-900/50">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-semibold text-text-primary">
-                ✨ AI Pitch Composer
-              </h1>
-              <p className="text-sm text-gray-600">
-                Crafting personalized pitch for {mockLeadProfile.name}
-              </p>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
+                  <span className="text-white text-sm">✨</span>
+                </div>
+                <h1 className="text-3xl font-bold text-white">AI Pitch Composer</h1>
+              </div>
+              <p className="text-gray-300 font-medium">Create personalized pitches with AI assistance</p>
             </div>
-            <div className="flex gap-2">
-              <button className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 transition-colors">
+            <div className="flex gap-3">
+              <button className="px-6 py-3 bg-gray-700/50 border border-gray-600 text-gray-300 rounded-xl hover:bg-gray-600/50 hover:border-gray-500 transition-all duration-200 font-medium">
                 📋 Templates
               </button>
-              <button className="px-4 py-2 bg-gradient-primary text-white rounded-lg text-sm hover:opacity-90 transition-all">
+              <button className="px-6 py-3 bg-gradient-primary text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300 transform hover:scale-[1.05]">
                 📤 Send Pitch
               </button>
             </div>
@@ -273,7 +319,7 @@ P.S. I'm based in [Your Location] but work extensively with African markets - gi
         </div>
 
         {/* Chat Messages */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {messages.map((message) => (
             <div
               key={message.id}
@@ -282,10 +328,10 @@ P.S. I'm based in [Your Location] but work extensively with African markets - gi
               <div className={`max-w-3xl ${message.type === 'user' ? 'order-2' : 'order-1'}`}>
                 {/* Message Bubble */}
                 <div
-                  className={`rounded-2xl px-4 py-3 ${
+                  className={`rounded-2xl px-6 py-4 shadow-lg backdrop-blur-sm border transition-all duration-300 hover:shadow-xl ${
                     message.type === 'user'
-                      ? 'bg-gradient-primary text-white'
-                      : 'bg-white border border-gray-200 text-text-primary'
+                      ? 'bg-gradient-primary text-white border-purple-400/30 hover:shadow-purple-500/20'
+                      : 'bg-gray-800/50 border-gray-700/50 text-white hover:shadow-gray-500/10'
                   }`}
                 >
                   {editingMessageId === message.id ? (
@@ -374,52 +420,25 @@ P.S. I'm based in [Your Location] but work extensively with African markets - gi
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Chat Input */}
-        <div className="bg-white border-t border-gray-200 p-4">
-          <div className="flex gap-3">
-            <input
-              ref={inputRef}
-              type="text"
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Ask me to generate a pitch, make edits, or send the message..."
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-accent focus:border-transparent outline-none"
-            />
+        {/* Input Area */}
+        <div className="border-t border-gray-700/50 p-6 bg-gray-900/50 backdrop-blur-sm">
+          <div className="flex gap-4">
+            <div className="flex-1">
+              <textarea
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Type your message to refine the pitch..."
+                className="w-full p-4 bg-gray-800/50 border border-gray-700/50 rounded-xl resize-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-white placeholder-gray-400 backdrop-blur-sm transition-all duration-200"
+                rows={3}
+              />
+            </div>
             <button
               onClick={handleSendMessage}
               disabled={!inputMessage.trim() || isTyping}
-              className="bg-gradient-primary text-white px-6 py-3 rounded-lg font-semibold hover:opacity-90 disabled:opacity-50 transition-all transform hover:scale-[1.02] active:scale-[0.98] animate-bounce-subtle"
+              className="px-6 py-3 bg-gradient-primary text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300 transform hover:scale-[1.05] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
-              Send
-            </button>
-          </div>
-          
-          {/* Quick Actions */}
-          <div className="flex gap-2 mt-3">
-            <button
-              onClick={() => setInputMessage("Generate a pitch for this lead")}
-              className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-gray-200 transition-colors"
-            >
-              🎯 Generate Pitch
-            </button>
-            <button
-              onClick={() => setInputMessage("Make it more casual and friendly")}
-              className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-gray-200 transition-colors"
-            >
-              😊 Make Casual
-            </button>
-            <button
-              onClick={() => setInputMessage("Add more technical details")}
-              className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-gray-200 transition-colors"
-            >
-              🔧 Add Details
-            </button>
-            <button
-              onClick={() => setInputMessage("Ready to send this pitch")}
-              className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-gray-200 transition-colors"
-            >
-              📤 Send Now
+              {isTyping ? '⏳' : '📤'} Send
             </button>
           </div>
         </div>

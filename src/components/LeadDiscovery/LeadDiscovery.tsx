@@ -133,52 +133,43 @@ export default function LeadDiscovery({ user, userPlan }: LeadDiscoveryProps) {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [currentFilters, setCurrentFilters] = useState<Partial<LeadData>>({});
 
+  const togglePlatform = (platform: string) => {
+    const newPlatforms = filters.platforms.includes(platform)
+      ? filters.platforms.filter(p => p !== platform)
+      : [...filters.platforms, platform];
+    setFilters({...filters, platforms: newPlatforms});
+  };
+
   const handleSearch = async () => {
     setIsSearching(true);
     setSearchProgress(0);
     setDiscoveredLeads([]);
 
     // Simulate AI search progress
-    const progressSteps = [
-      "Scanning LinkedIn profiles...",
-      "Analyzing Upwork projects...",
-      "Checking AngelList startups...",
-      "Reviewing company websites...",
-      "Scoring prospects with AI...",
-      "Filtering results..."
-    ];
+    const interval = setInterval(() => {
+      setSearchProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          setIsSearching(false);
+          
+          // Filter mock leads based on current filters
+          const filteredLeads = mockDiscoveredLeads.filter(lead => {
+            const matchesIndustry = filters.industry === "Any" || lead.industry === filters.industry;
+            const matchesLocation = filters.location === "Any" || lead.location.includes(filters.location);
+            const matchesUrgency = filters.urgency === "Any" || lead.urgency === filters.urgency;
+            return matchesIndustry && matchesLocation && matchesUrgency;
+          });
 
-    for (let i = 0; i < progressSteps.length; i++) {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setSearchProgress(((i + 1) / progressSteps.length) * 100);
-    }
-
-    // Filter mock leads based on criteria
-    let filteredLeads = mockDiscoveredLeads;
-    
-    if (filters.industry !== "All Industries") {
-      filteredLeads = filteredLeads.filter(lead => 
-        lead.industry.toLowerCase().includes(filters.industry.toLowerCase())
-      );
-    }
-
-    if (filters.location !== "Global") {
-      filteredLeads = filteredLeads.filter(lead => 
-        lead.location.includes(filters.location) || lead.country === filters.location
-      );
-    }
-
-    // Limit results based on plan
-    const planLimits = {
-      starter: 3,
-      pro: 10,
-      elite: filteredLeads.length
-    };
-
-    const limitedLeads = filteredLeads.slice(0, planLimits[userPlan as keyof typeof planLimits] || 3);
-    
-    setDiscoveredLeads(limitedLeads);
-    setIsSearching(false);
+          // Apply plan limits
+          const planLimits = { starter: 3, pro: 10, elite: filteredLeads.length };
+          const limitedLeads = filteredLeads.slice(0, planLimits[userPlan as keyof typeof planLimits] || 3);
+          
+          setDiscoveredLeads(limitedLeads);
+          return 100;
+        }
+        return prev + Math.random() * 15;
+      });
+    }, 200);
   };
 
   const getScoreColor = (score: number) => {
@@ -205,29 +196,39 @@ export default function LeadDiscovery({ user, userPlan }: LeadDiscoveryProps) {
   };
 
   return (
-    <div className="p-8  min-h-screen">
+    <div className="p-8 min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-text-primary mb-2">
-          🔍 AI Lead Discovery
-        </h1>
-        <p className="text-gray-600">
-          Find high-quality prospects across multiple platforms with AI-powered scoring
+      <div className="mb-8 text-center">
+        <div className="inline-flex items-center gap-3 mb-4">
+          <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center animate-pulse">
+            <span className="text-white text-2xl">🔍</span>
+          </div>
+          <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-gray-700">
+            AI Lead Discovery
+          </h1>
+        </div>
+        <p className="text-gray-300 text-lg max-w-2xl mx-auto">
+          Discover high-quality prospects across global markets with AI-powered intelligence
         </p>
       </div>
 
       {/* Search Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-        <h2 className="text-xl font-semibold text-text-primary mb-4">Search Filters</h2>
+      <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-8 mb-8 shadow-2xl hover:shadow-purple-500/10 transition-all duration-300">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
+            <span className="text-white text-sm">⚡</span>
+          </div>
+          <h2 className="text-2xl font-semibold text-white">Smart Filters</h2>
+        </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {/* Industry Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Industry</label>
+          <div className="group">
+            <label className="block text-sm font-medium text-gray-300 mb-3 group-hover:text-white transition-colors">🏢 Industry</label>
             <select
               value={filters.industry}
               onChange={(e) => setFilters({...filters, industry: e.target.value})}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-accent focus:border-transparent"
+              className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 hover:bg-gray-700/70"
             >
               {industries.map(industry => (
                 <option key={industry} value={industry}>{industry}</option>
@@ -236,12 +237,12 @@ export default function LeadDiscovery({ user, userPlan }: LeadDiscoveryProps) {
           </div>
 
           {/* Location Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+          <div className="group">
+            <label className="block text-sm font-medium text-gray-300 mb-3 group-hover:text-white transition-colors">🌍 Location</label>
             <select
               value={filters.location}
               onChange={(e) => setFilters({...filters, location: e.target.value})}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-accent focus:border-transparent"
+              className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 hover:bg-gray-700/70"
             >
               {locations.map(location => (
                 <option key={location} value={location}>{location}</option>
@@ -250,12 +251,12 @@ export default function LeadDiscovery({ user, userPlan }: LeadDiscoveryProps) {
           </div>
 
           {/* Budget Range Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Budget Range</label>
+          <div className="group">
+            <label className="block text-sm font-medium text-gray-300 mb-3 group-hover:text-white transition-colors"> Budget Range</label>
             <select
               value={filters.budgetRange}
               onChange={(e) => setFilters({...filters, budgetRange: e.target.value})}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-accent focus:border-transparent"
+              className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 hover:bg-gray-700/70"
             >
               {budgetRanges.map(range => (
                 <option key={range} value={range}>{range}</option>
@@ -264,12 +265,12 @@ export default function LeadDiscovery({ user, userPlan }: LeadDiscoveryProps) {
           </div>
 
           {/* Urgency Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Urgency</label>
+          <div className="group">
+            <label className="block text-sm font-medium text-gray-300 mb-3 group-hover:text-white transition-colors"> Urgency</label>
             <select
               value={filters.urgency}
               onChange={(e) => setFilters({...filters, urgency: e.target.value})}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-accent focus:border-transparent"
+              className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 hover:bg-gray-700/70"
             >
               <option value="Any">Any Urgency</option>
               <option value="High">High</option>
@@ -280,22 +281,17 @@ export default function LeadDiscovery({ user, userPlan }: LeadDiscoveryProps) {
         </div>
 
         {/* Platform Selection */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Platforms to Search</label>
-          <div className="flex flex-wrap gap-2">
+        <div className="mb-8">
+          <label className="block text-sm font-medium text-gray-300 mb-4"> Platforms to Search</label>
+          <div className="flex flex-wrap gap-3">
             {platforms.map(platform => (
               <button
                 key={platform}
-                onClick={() => {
-                  const newPlatforms = filters.platforms.includes(platform)
-                    ? filters.platforms.filter(p => p !== platform)
-                    : [...filters.platforms, platform];
-                  setFilters({...filters, platforms: newPlatforms});
-                }}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                onClick={() => togglePlatform(platform)}
+                className={`px-6 py-3 rounded-xl border transition-all duration-200 transform hover:scale-105 ${
                   filters.platforms.includes(platform)
-                    ? 'bg-gradient-primary text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? "bg-gradient-primary text-white border-purple-500 shadow-lg shadow-purple-500/25"
+                    : "bg-gray-700/50 text-gray-300 border-gray-600 hover:border-purple-500 hover:text-white hover:bg-gray-700/70"
                 }`}
               >
                 {platform}
@@ -308,112 +304,165 @@ export default function LeadDiscovery({ user, userPlan }: LeadDiscoveryProps) {
         <button
           onClick={handleSearch}
           disabled={isSearching}
-          className="bg-gradient-primary text-white px-8 py-3 rounded-lg font-semibold hover:opacity-90 disabled:opacity-50 transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+          className="w-full bg-gradient-primary text-white py-4 px-8 rounded-xl font-semibold text-lg hover:shadow-2xl hover:shadow-purple-500/25 transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group"
         >
-          {isSearching ? (
-            <div className="flex items-center">
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-              Searching... {Math.round(searchProgress)}%
-            </div>
-          ) : (
-            "🚀 Discover Leads"
-          )}
+          <div className="absolute inset-0 bg-white/10 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+          <div className="relative z-10">
+            {isSearching ? (
+              <div className="flex items-center justify-center gap-3">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                <span>AI Scanning Global Markets...</span>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center gap-3">
+                <span className="text-xl"></span>
+                <span>Discover Global Leads</span>
+              </div>
+            )}
+          </div>
         </button>
       </div>
 
       {/* Search Progress */}
       {isSearching && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-text-primary">AI Search Progress</span>
-            <span className="text-sm text-gray-500">{Math.round(searchProgress)}%</span>
+        <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-8 mb-8 shadow-2xl animate-pulse">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center animate-spin">
+              <span className="text-white text-sm"></span>
+            </div>
+            <h3 className="text-2xl font-semibold text-white">AI Scanning Global Markets</h3>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className="bg-gradient-primary h-2 rounded-full transition-all duration-500"
-              style={{ width: `${searchProgress}%` }}
-            ></div>
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <span className="text-gray-300 text-lg">Analyzing prospects across platforms...</span>
+              <span className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">{Math.round(searchProgress)}%</span>
+            </div>
+            <div className="w-full bg-gray-700 rounded-full h-3 overflow-hidden">
+              <div 
+                className="bg-gradient-primary h-3 rounded-full transition-all duration-500 relative overflow-hidden"
+                style={{ width: `${searchProgress}%` }}
+              >
+                <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+              <div className="bg-gray-700/30 rounded-xl p-4">
+                <div className="text-2xl mb-2"></div>
+                <div className="text-gray-300 text-sm">Scanning</div>
+              </div>
+              <div className="bg-gray-700/30 rounded-xl p-4">
+                <div className="text-2xl mb-2"></div>
+                <div className="text-gray-300 text-sm">AI Analysis</div>
+              </div>
+              <div className="bg-gray-700/30 rounded-xl p-4">
+                <div className="text-2xl mb-2"></div>
+                <div className="text-gray-300 text-sm">Scoring</div>
+              </div>
+              <div className="bg-gray-700/30 rounded-xl p-4">
+                <div className="text-2xl mb-2"></div>
+                <div className="text-gray-300 text-sm">Filtering</div>
+              </div>
+            </div>
           </div>
         </div>
       )}
 
       {/* Results */}
       {discoveredLeads.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-text-primary">
-              Discovered Leads ({discoveredLeads.length})
-            </h2>
-            <div className="text-sm text-gray-500">
-              Sorted by AI Score (highest first)
+        <div className="space-y-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-gradient-primary rounded-xl flex items-center justify-center">
+                <span className="text-white text-xl"></span>
+              </div>
+              <div>
+                <h3 className="text-3xl font-bold text-white">
+                  Discovered Leads
+                </h3>
+                <p className="text-gray-300">
+                  {discoveredLeads.length} high-quality prospects found
+                </p>
+              </div>
             </div>
+            {userPlan === "starter" && (
+              <div className="bg-gradient-primary/20 border border-purple-500/30 rounded-xl px-4 py-2">
+                <span className="text-purple-300 text-sm"> Upgrade to Pro for unlimited results</span>
+              </div>
+            )}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {discoveredLeads.map((lead) => (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {discoveredLeads.map((lead, index) => (
               <div
                 key={lead.id}
-                className="border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all duration-200 hover:scale-[1.02]"
+                className="bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-8 hover:shadow-2xl hover:shadow-purple-500/10 transition-all duration-300 transform hover:scale-[1.02] group"
+                style={{ animationDelay: `${index * 100}ms` }}
               >
                 {/* Lead Header */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">{getCountryFlag(lead.country)}</span>
+                <div className="flex items-start justify-between mb-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center text-2xl">
+                      {getCountryFlag(lead.country)}
+                    </div>
                     <div>
-                      <h3 className="font-semibold text-text-primary">{lead.name}</h3>
-                      <p className="text-sm text-gray-600">{lead.title} at {lead.company}</p>
+                      <h3 className="text-xl font-bold text-white group-hover:text-purple-300 transition-colors">{lead.name}</h3>
+                      <p className="text-gray-300 font-medium">{lead.company}</p>
+                      <p className="text-sm text-gray-400">{lead.title}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getScoreColor(lead.score)}`}>
-                      {lead.score}% Match
-                    </span>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getUrgencyColor(lead.urgency)}`}>
-                      {lead.urgency}
-                    </span>
+                  <div className="text-right space-y-2">
+                    <div className={`inline-flex items-center px-3 py-2 rounded-xl text-sm font-bold ${getScoreColor(lead.score)} shadow-lg`}>
+                      🎯 {lead.score}
+                    </div>
+                    <div className={`inline-flex items-center px-3 py-2 rounded-xl text-sm font-medium ${getUrgencyColor(lead.urgency)}`}>
+                      ⚡ {lead.urgency}
+                    </div>
                   </div>
                 </div>
 
                 {/* Lead Details */}
-                <div className="space-y-2 mb-4">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Location:</span>
-                    <span className="font-medium text-text-primary">{lead.location}</span>
+                <div className="space-y-4 mb-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-gray-700/30 rounded-xl p-4">
+                      <div className="text-gray-400 text-sm mb-1">🏢 Industry</div>
+                      <div className="text-white font-semibold">{lead.industry}</div>
+                    </div>
+                    <div className="bg-gray-700/30 rounded-xl p-4">
+                      <div className="text-gray-400 text-sm mb-1">💰 Budget</div>
+                      <div className="text-white font-semibold">{lead.budget}</div>
+                    </div>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Budget:</span>
-                    <span className="font-medium text-text-primary">{lead.budget}</span>
+                  <div className="bg-gray-700/30 rounded-xl p-4">
+                    <div className="text-gray-400 text-sm mb-2">📍 Location</div>
+                    <div className="text-white font-semibold">{lead.location}</div>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Industry:</span>
-                    <span className="font-medium text-text-primary">{lead.industry}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Last Active:</span>
-                    <span className="font-medium text-text-primary">{lead.lastActive}</span>
+                  <div className="bg-gray-700/30 rounded-xl p-4">
+                    <div className="text-gray-400 text-sm mb-3">🚀 Platforms</div>
+                    <div className="flex flex-wrap gap-2">
+                      {lead.platforms.map(platform => (
+                        <span key={platform} className="px-3 py-1 bg-gradient-primary/20 border border-purple-500/30 text-purple-300 text-xs rounded-lg font-medium">
+                          {platform}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
                 {/* Description */}
-                <p className="text-sm text-gray-700 mb-4 bg-gray-50 p-3 rounded-lg">
-                  {lead.description}
-                </p>
-
-                {/* Platforms */}
-                <div className="flex flex-wrap gap-1 mb-4">
-                  {lead.platforms.map(platform => (
-                    <span key={platform} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                      {platform}
-                    </span>
-                  ))}
+                <div className="bg-gray-700/20 rounded-xl p-4 mb-6">
+                  <div className="text-gray-400 text-sm mb-2">📝 Description</div>
+                  <p className="text-gray-300 text-sm leading-relaxed">{lead.description}</p>
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-2">
-                  <button className="flex-1 py-2 bg-gradient-primary text-white rounded-lg font-semibold hover:opacity-90 transition-all transform hover:scale-[1.02]">
-                    ✨ Generate Pitch
+                <div className="flex gap-3">
+                  <button className="flex-1 py-3 bg-gradient-primary text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300 transform hover:scale-[1.02] relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-white/10 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                    <span className="relative z-10 flex items-center justify-center gap-2">
+                      ✨ Generate Pitch
+                    </span>
                   </button>
-                  <button className="px-4 py-2 border border-primary-accent text-primary-accent rounded-lg hover:bg-purple-50 transition-colors">
+                  <button className="px-6 py-3 border border-purple-500/50 text-purple-300 rounded-xl hover:bg-purple-500/10 hover:border-purple-400 transition-all duration-200 font-medium">
                     📧 Contact
                   </button>
                 </div>
@@ -425,12 +474,28 @@ export default function LeadDiscovery({ user, userPlan }: LeadDiscoveryProps) {
 
       {/* Empty State */}
       {!isSearching && discoveredLeads.length === 0 && (
-        <div className="text-center py-12">
-          <div className="text-6xl mb-4">🔍</div>
-          <h3 className="text-xl font-semibold text-text-primary mb-2">Ready to Discover Leads</h3>
-          <p className="text-gray-600">
-            Set your filters and click "Discover Leads" to find high-quality prospects with AI
+        <div className="text-center py-16">
+          <div className="w-24 h-24 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
+            <span className="text-4xl">🔍</span>
+          </div>
+          <h3 className="text-2xl font-bold text-white mb-4">Ready to Discover Global Leads</h3>
+          <p className="text-gray-300 text-lg max-w-md mx-auto mb-8">
+            Configure your search filters above and let our AI discover high-quality prospects across global markets
           </p>
+          <div className="flex items-center justify-center gap-8 text-gray-400">
+            <div className="text-center">
+              <div className="text-2xl mb-2">🌍</div>
+              <div className="text-sm">Global Reach</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl mb-2">🤖</div>
+              <div className="text-sm">AI Powered</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl mb-2">⚡</div>
+              <div className="text-sm">Real-time</div>
+            </div>
+          </div>
         </div>
       )}
     </div>

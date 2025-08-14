@@ -163,52 +163,55 @@ export default function AIAssistant({ activeSection, userPlan, onSectionChange }
 
   return (
     <>
-      {/* Floating AI Assistant Button */}
-      <div className="fixed bottom-6 right-6 z-50">
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="w-14 h-14 bg-gradient-primary text-white rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-110 flex items-center justify-center relative"
-        >
-          <FaRobot className="text-xl" />
-          {insights.filter(i => i.priority === "high").length > 0 && (
-            <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
-              <span className="text-xs text-white font-bold">
-                {insights.filter(i => i.priority === "high").length}
-              </span>
-            </div>
-          )}
-        </button>
-      </div>
+      {/* Floating AI Button */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="fixed bottom-6 right-6 w-16 h-16 bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700 text-white rounded-2xl shadow-2xl hover:shadow-purple-500/50 transition-all duration-500 transform hover:scale-110 hover:rotate-3 z-50 flex items-center justify-center group overflow-hidden"
+      >
+        <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        <FaRobot className="text-2xl relative z-10 group-hover:animate-bounce" />
+        {insights.length > 0 && (
+          <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center animate-pulse">
+            {insights.length}
+          </div>
+        )}
+      </button>
 
-      {/* AI Assistant Panel */}
+      {/* AI Panel */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 w-80 bg-white rounded-xl shadow-2xl border border-gray-200 z-40 max-h-96 overflow-hidden">
+        <div className="fixed bottom-24 right-6 w-96 bg-white/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/30 z-40 max-h-[32rem] overflow-hidden animate-slideUp">
           {/* Header */}
-          <div className="bg-gradient-primary text-white p-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FaRobot className="text-lg" />
-              <span className="font-semibold">AI Assistant</span>
+          <div className="bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-700 text-white p-6 flex items-center justify-between relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
+            <div className="flex items-center gap-3 relative z-10">
+              <div className="w-10 h-10 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+                <FaRobot className="text-xl" />
+              </div>
+              <div>
+                <span className="font-bold text-lg">AI Assistant</span>
+                <p className="text-white/80 text-sm">Your intelligent lead advisor</p>
+              </div>
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="text-white hover:text-gray-200 transition-colors"
+              className="text-white/80 hover:text-white hover:bg-white/20 p-2 rounded-xl transition-all duration-300 relative z-10"
             >
-              <FaTimes />
+              <FaTimes className="text-lg" />
             </button>
           </div>
 
           {/* Current Insight */}
           {currentInsight && (
-            <div className={`p-4 border-b border-gray-200 ${getInsightBgColor(currentInsight.type)}`}>
-              <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 mt-1">
-                  {getInsightIcon(currentInsight.type)}
+            <div className={`p-5 border-b border-white/20 ${getInsightBgColor(currentInsight.type)} backdrop-blur-sm animate-fadeIn`}>
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 p-3 rounded-2xl bg-white/80 shadow-lg">
+                  <div className="text-xl">{getInsightIcon(currentInsight.type)}</div>
                 </div>
                 <div className="flex-1">
-                  <h4 className="font-semibold text-sm text-gray-800 mb-1">
+                  <h4 className="font-bold text-base text-gray-800 mb-2">
                     {currentInsight.title}
                   </h4>
-                  <p className="text-sm text-gray-600 mb-3">
+                  <p className="text-sm text-gray-700 mb-4 leading-relaxed">
                     {currentInsight.message}
                   </p>
                   {currentInsight.action && (
@@ -217,15 +220,15 @@ export default function AIAssistant({ activeSection, userPlan, onSectionChange }
                         currentInsight.action?.onClick();
                         setCurrentInsight(null);
                       }}
-                      className="text-sm bg-white text-primary-accent border border-primary-accent px-3 py-1 rounded-lg hover:bg-primary-accent hover:text-white transition-colors"
+                      className="text-sm bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-xl font-semibold hover:from-purple-700 hover:to-blue-700 transform hover:scale-105 transition-all duration-300 shadow-lg"
                     >
-                      {currentInsight.action.label}
+                      {currentInsight.action.label} ✨
                     </button>
                   )}
                 </div>
                 <button
                   onClick={() => setCurrentInsight(null)}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  className="text-gray-400 hover:text-gray-600 hover:bg-white/50 p-2 rounded-xl transition-all duration-300"
                 >
                   <FaTimes className="text-sm" />
                 </button>
@@ -234,48 +237,55 @@ export default function AIAssistant({ activeSection, userPlan, onSectionChange }
           )}
 
           {/* All Insights */}
-          <div className="max-h-64 overflow-y-auto">
-            {insights.map((insight) => (
+          <div className="max-h-72 overflow-y-auto custom-scrollbar">
+            {insights.map((insight, index) => (
               <div
                 key={insight.id}
-                className="p-3 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer"
+                className="group p-4 border-b border-white/10 hover:bg-gradient-to-r hover:from-purple-50/50 hover:to-blue-50/50 transition-all duration-300 cursor-pointer transform hover:scale-[1.02]"
                 onClick={() => setCurrentInsight(insight)}
+                style={{ animationDelay: `${index * 100}ms` }}
               >
-                <div className="flex items-center gap-2">
-                  <div className="flex-shrink-0">
-                    {getInsightIcon(insight.type)}
+                <div className="flex items-center gap-3">
+                  <div className="flex-shrink-0 p-2 rounded-xl bg-white/60 group-hover:bg-white/80 transition-all duration-300 shadow-sm">
+                    <div className="text-lg">{getInsightIcon(insight.type)}</div>
                   </div>
                   <div className="flex-1">
-                    <h5 className="font-medium text-sm text-gray-800">
+                    <h5 className="font-bold text-sm text-gray-800 mb-1">
                       {insight.title}
                     </h5>
-                    <p className="text-xs text-gray-600 truncate">
+                    <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">
                       {insight.message}
                     </p>
                   </div>
-                  {insight.priority === "high" && (
-                    <div className="w-2 h-2 bg-red-500 rounded-full flex-shrink-0"></div>
-                  )}
+                  <div className="flex flex-col items-end gap-1">
+                    {insight.priority === "high" && (
+                      <div className="w-3 h-3 bg-gradient-to-r from-red-500 to-pink-500 rounded-full flex-shrink-0 animate-pulse shadow-lg"></div>
+                    )}
+                    <div className="text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      Click to view
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
 
           {/* Quick Actions */}
-          <div className="p-3 bg-gray-50 border-t border-gray-200">
-            <div className="grid grid-cols-2 gap-2">
+          <div className="p-5 bg-gradient-to-br from-gray-50/80 to-white/80 backdrop-blur-sm border-t border-white/20">
+            <h6 className="text-xs font-bold text-gray-600 mb-3 uppercase tracking-wider">Quick Actions</h6>
+            <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => onSectionChange("Lead Discovery")}
-                className="flex items-center gap-2 text-xs bg-white text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+                className="flex items-center gap-2 text-xs bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-4 py-3 rounded-xl hover:from-emerald-600 hover:to-teal-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-emerald-500/25 font-semibold"
               >
-                <FaBullseye className="text-xs" />
+                <FaBullseye className="text-sm" />
                 Find Leads
               </button>
               <button
                 onClick={() => onSectionChange("Pitch Composer")}
-                className="flex items-center gap-2 text-xs bg-white text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+                className="flex items-center gap-2 text-xs bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-3 rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-blue-500/25 font-semibold"
               >
-                <FaArrowUp className="text-xs" />
+                <FaArrowUp className="text-sm" />
                 Create Pitch
               </button>
             </div>

@@ -5,9 +5,9 @@ import {
   FaExclamationTriangle, 
   FaTimes,
   FaLightbulb,
-  FaTarget,
   FaDollarSign,
-  FaClock
+  FaClock,
+  FaBullseye
 } from "react-icons/fa";
 import { leadSwiftAPI, LeadData } from "../../services/api";
 
@@ -173,7 +173,7 @@ export default function InstantScoring({ leadData, onScoreUpdate }: InstantScori
       case "Decision Urgency":
         return <FaClock className="text-blue-500" />;
       case "Industry Match":
-        return <FaTarget className="text-purple-500" />;
+        return <FaBullseye className="text-purple-500" />;
       default:
         return <FaChartLine className="text-gray-500" />;
     }
@@ -184,69 +184,80 @@ export default function InstantScoring({ leadData, onScoreUpdate }: InstantScori
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+    <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/20 p-6 shadow-2xl shadow-purple-500/10 hover:shadow-purple-500/20 transition-all duration-500">
       {/* Score Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className={`w-12 h-12 rounded-full flex items-center justify-center ${getScoreColor(score)}`}>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${getScoreColor(score)} shadow-lg transform hover:scale-105 transition-all duration-300`}>
             {isLoading ? (
-              <div className="animate-spin w-5 h-5 border-2 border-current border-t-transparent rounded-full"></div>
+              <div className="animate-spin w-6 h-6 border-3 border-current border-t-transparent rounded-full"></div>
             ) : (
-              getScoreIcon(score)
+              <div className="text-xl">{getScoreIcon(score)}</div>
             )}
           </div>
           <div>
-            <h3 className="font-semibold text-gray-800">Lead Score</h3>
-            <div className="flex items-center gap-2">
-              <span className={`text-2xl font-bold ${score >= 80 ? 'text-green-600' : score >= 60 ? 'text-yellow-600' : 'text-red-600'}`}>
+            <h3 className="font-bold text-gray-800 text-lg mb-1">AI Lead Score</h3>
+            <div className="flex items-center gap-3">
+              <span className={`text-3xl font-black bg-gradient-to-r ${score >= 80 ? 'from-green-600 to-emerald-500' : score >= 60 ? 'from-yellow-600 to-orange-500' : 'from-red-600 to-pink-500'} bg-clip-text text-transparent`}>
                 {isLoading ? '--' : score}
               </span>
-              <span className="text-gray-500 text-sm">/100</span>
+              <span className="text-gray-400 text-sm font-medium">/100</span>
             </div>
           </div>
         </div>
         <button
           onClick={() => setShowDetails(!showDetails)}
-          className="text-sm text-primary-accent hover:text-primary-dark transition-colors"
+          className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-sm font-semibold rounded-xl hover:from-purple-700 hover:to-blue-700 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
         >
-          {showDetails ? 'Hide Details' : 'Show Details'}
+          {showDetails ? '👁️ Hide Details' : '🔍 Show Details'}
         </button>
       </div>
 
       {/* Score Bar */}
-      <div className="mb-4">
-        <div className="w-full bg-gray-200 rounded-full h-2">
+      <div className="mb-6">
+        <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden shadow-inner">
           <div 
-            className={`h-2 rounded-full transition-all duration-500 ${
-              score >= 80 ? 'bg-green-500' : score >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+            className={`h-3 rounded-full transition-all duration-1000 ease-out relative ${
+              score >= 80 ? 'bg-gradient-to-r from-green-500 to-emerald-400' : 
+              score >= 60 ? 'bg-gradient-to-r from-yellow-500 to-orange-400' : 
+              'bg-gradient-to-r from-red-500 to-pink-400'
             }`}
             style={{ width: `${isLoading ? 0 : score}%` }}
-          ></div>
+          >
+            <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+          </div>
+        </div>
+        <div className="flex justify-between mt-2 text-xs text-gray-500 font-medium">
+          <span>Poor</span>
+          <span>Good</span>
+          <span>Excellent</span>
         </div>
       </div>
 
       {/* Quick Recommendation */}
-      <div className={`p-3 rounded-lg mb-4 ${
-        score >= 80 ? 'bg-green-50 border border-green-200' : 
-        score >= 60 ? 'bg-yellow-50 border border-yellow-200' : 
-        'bg-red-50 border border-red-200'
-      }`}>
-        <div className="flex items-start gap-2">
-          <FaLightbulb className={`mt-1 ${
-            score >= 80 ? 'text-green-600' : 
-            score >= 60 ? 'text-yellow-600' : 
-            'text-red-600'
-          }`} />
-          <div>
-            <p className="text-sm font-medium text-gray-800">
-              {score >= 80 ? 'High Priority Lead' : 
-               score >= 60 ? 'Qualified Prospect' : 
-               'Needs Qualification'}
+      <div className={`p-4 rounded-2xl mb-6 backdrop-blur-sm border transition-all duration-300 hover:scale-[1.02] ${
+        score >= 80 ? 'bg-gradient-to-br from-green-50/80 to-emerald-50/80 border-green-200/50 shadow-green-500/10' : 
+        score >= 60 ? 'bg-gradient-to-br from-yellow-50/80 to-orange-50/80 border-yellow-200/50 shadow-yellow-500/10' : 
+        'bg-gradient-to-br from-red-50/80 to-pink-50/80 border-red-200/50 shadow-red-500/10'
+      } shadow-lg`}>
+        <div className="flex items-start gap-3">
+          <div className={`p-2 rounded-xl ${
+            score >= 80 ? 'bg-green-100 text-green-600' : 
+            score >= 60 ? 'bg-yellow-100 text-yellow-600' : 
+            'bg-red-100 text-red-600'
+          }`}>
+            <FaLightbulb className="text-lg" />
+          </div>
+          <div className="flex-1">
+            <p className="text-base font-bold text-gray-800 mb-2">
+              {score >= 80 ? '🎯 High Priority Lead' : 
+               score >= 60 ? '✅ Qualified Prospect' : 
+               '⚠️ Needs Qualification'}
             </p>
-            <p className="text-xs text-gray-600 mt-1">
-              {score >= 80 ? 'Excellent fit - prioritize immediate outreach' : 
-               score >= 60 ? 'Good potential - worth pursuing with personalized approach' : 
-               'Consider additional qualification before investing time'}
+            <p className="text-sm text-gray-700 leading-relaxed">
+              {score >= 80 ? 'Excellent fit - prioritize immediate outreach with personalized messaging' : 
+               score >= 60 ? 'Good potential - worth pursuing with tailored approach and value proposition' : 
+               'Consider additional qualification and research before investing significant time'}
             </p>
           </div>
         </div>
@@ -254,24 +265,27 @@ export default function InstantScoring({ leadData, onScoreUpdate }: InstantScori
 
       {/* Detailed Factors */}
       {showDetails && (
-        <div className="space-y-3">
-          <h4 className="font-medium text-gray-800 text-sm">Scoring Factors</h4>
+        <div className="space-y-4 animate-fadeIn">
+          <h4 className="font-bold text-gray-800 text-lg mb-4 flex items-center gap-2">
+            <span className="w-1 h-6 bg-gradient-to-b from-purple-600 to-blue-600 rounded-full"></span>
+            Scoring Breakdown
+          </h4>
           {factors.map((factor, index) => (
-            <div key={index} className="flex items-start gap-3 p-2 bg-gray-50 rounded-lg">
-              <div className="flex-shrink-0 mt-1">
-                {getFactorIcon(factor)}
+            <div key={index} className="group flex items-start gap-4 p-4 bg-gradient-to-r from-white/60 to-gray-50/60 backdrop-blur-sm rounded-2xl border border-white/30 hover:border-purple-200/50 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/10 hover:scale-[1.02]">
+              <div className="flex-shrink-0 p-2 rounded-xl bg-white/80 shadow-sm group-hover:shadow-md transition-all duration-300">
+                <div className="text-lg">{getFactorIcon(factor)}</div>
               </div>
               <div className="flex-1">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium text-gray-800">{factor.name}</span>
-                  <span className={`text-sm font-semibold ${
-                    factor.impact === 'positive' ? 'text-green-600' : 
-                    factor.impact === 'negative' ? 'text-red-600' : 'text-gray-600'
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-bold text-gray-800">{factor.name}</span>
+                  <span className={`text-sm font-black px-2 py-1 rounded-lg ${
+                    factor.impact === 'positive' ? 'bg-green-100 text-green-700' : 
+                    factor.impact === 'negative' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'
                   }`}>
                     +{factor.score}
                   </span>
                 </div>
-                <p className="text-xs text-gray-600">{factor.description}</p>
+                <p className="text-sm text-gray-700 leading-relaxed">{factor.description}</p>
               </div>
             </div>
           ))}
