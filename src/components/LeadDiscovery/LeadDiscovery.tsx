@@ -367,7 +367,7 @@ export default function LeadDiscovery({ user, userPlan }: LeadDiscoveryProps) {
       } else {
         // Fallback to enhanced simulation
         console.log('🔄 Using enhanced simulation mode');
-        await this.handleSimulatedSearch(selectedPlatforms);
+        await handleSimulatedSearch(selectedPlatforms);
       }
       
     } catch (error) {
@@ -376,7 +376,7 @@ export default function LeadDiscovery({ user, userPlan }: LeadDiscoveryProps) {
       
       // Fallback to simulation
       console.log('🔄 Falling back to enhanced simulation');
-      await this.handleSimulatedSearch(selectedPlatforms);
+      await handleSimulatedSearch(selectedPlatforms);
     }
     
     setIsSearching(false);
