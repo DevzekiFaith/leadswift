@@ -57,6 +57,8 @@ export default function PitchComposer({ user, selectedLead }: PitchComposerProps
   const [isTyping, setIsTyping] = useState(false);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editingContent, setEditingContent] = useState("");
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [sendingPitch, setSendingPitch] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -178,7 +180,186 @@ P.S. I'm based in [Your Location] but work extensively with African markets - gi
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSendMessage();
+      saveEditedMessage();
+    }
+  };
+
+  // Template functionality
+  const pitchTemplates = [
+    {
+      id: '1',
+      name: 'Cold Outreach Template',
+      content: `Subject: Quick question about [Company]'s [specific challenge]
+
+Hi [Name],
+
+I noticed [specific observation about their company/recent activity]. 
+
+I help [similar companies] with [specific problem you solve], and I believe [Company] could benefit from [specific value proposition].
+
+Would you be open to a brief 15-minute call to discuss how we've helped companies like [similar company] achieve [specific result]?
+
+Best regards,
+[Your name]`
+    },
+    {
+      id: '2',
+      name: 'Follow-up Template',
+      content: `Subject: Following up on our conversation
+
+Hi [Name],
+
+Thanks for taking the time to speak with me about [Company]'s [specific challenge] last week.
+
+As promised, I've attached [specific resource/case study] that shows how we helped [similar company] achieve [specific result].
+
+I'd love to schedule a follow-up call to discuss next steps. Are you available for a 20-minute call this week?
+
+Best regards,
+[Your name]`
+    },
+    {
+      id: '3',
+      name: 'Value Proposition Template',
+      content: `Subject: How [Your Company] can help [Their Company] achieve [specific goal]
+
+Hi [Name],
+
+I've been following [Company]'s growth and I'm impressed by [specific achievement/milestone].
+
+We specialize in helping [type of companies] like yours [specific value proposition]. Here's what we can offer:
+
+• [Benefit 1 with specific metric]
+• [Benefit 2 with specific metric]  
+• [Benefit 3 with specific metric]
+
+Would you be interested in a brief call to explore how we can help [Company] achieve [specific goal]?
+
+Best regards,
+[Your name]`
+    }
+  ];
+
+  const handleTemplateSelect = (template: typeof pitchTemplates[0]) => {
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      type: "ai",
+      content: template.content,
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, newMessage]);
+    setShowTemplates(false);
+  };
+
+  // Copy functionality
+  const handleCopyMessage = async (content: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      // Show temporary success feedback
+      const button = document.activeElement as HTMLButtonElement;
+      if (button) {
+        const originalText = button.innerHTML;
+        button.innerHTML = '✅ Copied!';
+        button.style.color = '#10B981';
+        setTimeout(() => {
+          button.innerHTML = originalText;
+          button.style.color = '';
+        }, 2000);
+      }
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = content;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+    }
+  };
+
+  // Regenerate functionality
+  const handleRegenerateMessage = async (messageId: string) => {
+    setIsTyping(true);
+    
+    // Simulate AI regeneration time
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    const regeneratedContent = `Subject: Unlock African Markets for TechFlow Solutions 🌍 (Revised)
+
+Hi Sarah,
+
+Your recent LinkedIn post about scaling B2B marketing operations caught my attention. Having helped 50+ SaaS companies successfully expand into emerging markets, I see tremendous potential for TechFlow Solutions in Africa.
+
+Here's why this opportunity is perfect for you:
+• Your B2B lead generation focus aligns with Africa's booming tech ecosystem
+• The $25-50K investment range is optimal for our proven market entry approach
+• Timing couldn't be better - African SaaS adoption has surged 40% this year
+
+What we bring to TechFlow:
+🎯 Targeted lead generation across 15 high-growth African markets
+🌍 Culturally-adapted marketing strategies that resonate locally
+🤝 Direct access to our network of 200+ African tech decision-makers
+📈 Battle-tested framework that's generated $2M+ for similar SaaS companies
+
+I'd love to share our detailed case study of a San Francisco SaaS company that achieved 300% ROI in their African expansion within 12 months.
+
+Are you available for a brief 15-minute call this week to explore how we can accelerate TechFlow's growth in these high-potential markets?
+
+Best regards,
+${user.email?.split('@')[0]}
+
+P.S. Based in [Your Location] with extensive African market expertise - you get international standards with deep local insights.`;
+
+    setMessages(prev => prev.map(msg => 
+      msg.id === messageId 
+        ? { ...msg, content: regeneratedContent, timestamp: new Date() }
+        : msg
+    ));
+    setIsTyping(false);
+  };
+
+  // Send pitch functionality
+  const handleSendPitch = async () => {
+    setSendingPitch(true);
+    
+    // Get the latest AI message (pitch)
+    const latestAIMessage = messages.filter(msg => msg.type === 'ai').pop();
+    
+    if (!latestAIMessage) {
+      alert('No pitch to send. Please generate a pitch first.');
+      setSendingPitch(false);
+      return;
+    }
+
+    try {
+      // Simulate sending email/message
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Add confirmation message
+      const confirmationMessage: Message = {
+        id: Date.now().toString(),
+        type: "ai",
+        content: `✅ Pitch sent successfully to ${mockLeadProfile.name} at ${mockLeadProfile.company}!
+
+📧 Email delivered to: ${mockLeadProfile.name.toLowerCase().replace(' ', '.')}@${mockLeadProfile.company.toLowerCase().replace(' ', '')}.com
+📊 Tracking: Email opened, link clicks, and responses will be monitored
+🔔 You'll be notified of any replies or engagement
+
+Next steps:
+• Follow up in 3-5 business days if no response
+• Prepare additional value propositions based on their interests
+• Consider connecting on LinkedIn for relationship building`,
+        timestamp: new Date()
+      };
+
+      setMessages(prev => [...prev, confirmationMessage]);
+      setSendingPitch(false);
+      
+    } catch (error) {
+      console.error('Failed to send pitch:', error);
+      alert('Failed to send pitch. Please try again.');
+      setSendingPitch(false);
     }
   };
 
@@ -308,15 +489,59 @@ P.S. I'm based in [Your Location] but work extensively with African markets - gi
               <p className="text-gray-300 font-medium">Create personalized pitches with AI assistance</p>
             </div>
             <div className="flex gap-3">
-              <button className="px-6 py-3 bg-gray-700/50 border border-gray-600 text-gray-300 rounded-xl hover:bg-gray-600/50 hover:border-gray-500 transition-all duration-200 font-medium">
+              <button 
+                onClick={() => setShowTemplates(!showTemplates)}
+                className="px-6 py-3 bg-gray-700/50 border border-gray-600 text-gray-300 rounded-xl hover:bg-gray-600/50 hover:border-gray-500 transition-all duration-200 font-medium"
+              >
                 📋 Templates
               </button>
-              <button className="px-6 py-3 bg-gradient-primary text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300 transform hover:scale-[1.05]">
-                📤 Send Pitch
+              <button 
+                onClick={handleSendPitch}
+                disabled={sendingPitch}
+                className="px-6 py-3 bg-gradient-primary text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300 transform hover:scale-[1.05] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              >
+                {sendingPitch ? '⏳ Sending...' : '📤 Send Pitch'}
               </button>
             </div>
           </div>
         </div>
+
+        {/* Templates Modal */}
+        {showTemplates && (
+          <div className="absolute top-20 right-8 z-50 bg-gray-800/95 backdrop-blur-xl rounded-2xl border border-gray-700/50 p-6 shadow-2xl min-w-96">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-white">Pitch Templates</h3>
+              <button 
+                onClick={() => setShowTemplates(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="space-y-3">
+              {pitchTemplates.map((template) => (
+                <button
+                  key={template.id}
+                  onClick={() => handleTemplateSelect(template)}
+                  className="w-full text-left p-4 bg-gray-700/50 hover:bg-gray-600/50 rounded-xl border border-gray-600/50 hover:border-gray-500/50 transition-all duration-200"
+                >
+                  <h4 className="font-semibold text-white mb-1">{template.name}</h4>
+                  <p className="text-sm text-gray-400 line-clamp-2">
+                    {template.content.split('\n')[0].replace('Subject: ', '')}
+                  </p>
+                </button>
+              ))}
+            </div>
+            <div className="mt-4 pt-4 border-t border-gray-700/50">
+              <button
+                onClick={generateAIPitch}
+                className="w-full px-4 py-3 bg-gradient-primary text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300"
+              >
+                ✨ Generate AI Pitch
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Chat Messages */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
@@ -371,10 +596,17 @@ P.S. I'm based in [Your Location] but work extensively with African markets - gi
                     >
                       ✏️ Edit
                     </button>
-                    <button className="text-xs text-gray-500 hover:text-primary-accent transition-colors">
+                    <button 
+                      onClick={() => handleCopyMessage(message.content)}
+                      className="text-xs text-gray-500 hover:text-primary-accent transition-colors"
+                    >
                       📋 Copy
                     </button>
-                    <button className="text-xs text-gray-500 hover:text-primary-accent transition-colors">
+                    <button 
+                      onClick={() => handleRegenerateMessage(message.id)}
+                      disabled={isTyping}
+                      className="text-xs text-gray-500 hover:text-primary-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
                       🔄 Regenerate
                     </button>
                   </div>
