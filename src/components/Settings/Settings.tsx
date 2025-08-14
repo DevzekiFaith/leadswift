@@ -17,7 +17,11 @@ import {
   FaEye,
   FaCheck,
   FaTimes,
-  FaSave
+  FaSave,
+  FaRobot,
+  FaEnvelope,
+  FaCalendarAlt,
+  FaChartLine
 } from 'react-icons/fa';
 
 interface SettingsProps {
@@ -40,6 +44,42 @@ export default function Settings({ user }: SettingsProps) {
     theme: settings.theme
   });
   const [dataManagement, setDataManagement] = useState(settings.dataManagement);
+  
+  // Automation settings state
+  const [automationSettings, setAutomationSettings] = useState({
+    enabled: true,
+    proposalGeneration: {
+      autoGenerate: true,
+      includeCompanyResearch: true,
+      personalizeGreeting: true,
+      includePortfolio: true,
+      tone: 'professional' as 'casual' | 'professional' | 'formal',
+      maxLength: 500
+    },
+    emailOutreach: {
+      autoSend: false,
+      followUpEnabled: true,
+      followUpDelay: 3,
+      maxFollowUps: 3,
+      trackOpens: true,
+      trackClicks: true,
+      customSignature: 'Best regards,\n[Your Name]'
+    },
+    interviewPrep: {
+      autoGenerate: true,
+      includeCompanyResearch: true,
+      generateQuestions: true,
+      mockInterviewEnabled: true,
+      salaryResearchEnabled: true
+    },
+    analytics: {
+      trackApplications: true,
+      trackEmails: true,
+      trackInterviews: true,
+      generateReports: true,
+      aiRecommendations: true
+    }
+  });
 
   // Sync local state with context when settings change
   useEffect(() => {
@@ -97,6 +137,7 @@ export default function Settings({ user }: SettingsProps) {
     { id: 'privacy', name: 'Privacy & Security', icon: FaLock },
     { id: 'search', name: 'Search Preferences', icon: FaSearch },
     { id: 'api', name: 'API Settings', icon: FaCog },
+    { id: 'automation', name: 'Automation', icon: FaRobot },
     { id: 'preferences', name: 'Preferences', icon: FaCog },
     { id: 'data', name: 'Data Management', icon: FaDatabase }
   ];
@@ -723,6 +764,366 @@ export default function Settings({ user }: SettingsProps) {
                       </select>
                     </div>
                   </div>
+                </div>
+              )}
+
+              {/* Automation Tab */}
+              {activeTab === 'automation' && (
+                <div className="space-y-8">
+                  <div>
+                    <h2 className="text-2xl font-bold text-white mb-2">🤖 Automation Settings</h2>
+                    <p className="text-sm text-gray-400 mb-6">Configure your job acquisition automation preferences and behavior.</p>
+                  </div>
+
+                  {/* Master Automation Toggle */}
+                  <div className="p-6 bg-white/5 rounded-xl border border-white/10">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-white font-semibold text-lg mb-2">Enable Automation</h3>
+                        <p className="text-gray-400 text-sm">Master switch for all automation features</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={automationSettings.enabled}
+                          onChange={(e) => setAutomationSettings({...automationSettings, enabled: e.target.checked})}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                      </label>
+                    </div>
+                  </div>
+
+                  {automationSettings.enabled && (
+                    <>
+                      {/* Proposal Generation Settings */}
+                      <div className="p-6 bg-white/5 rounded-xl border border-white/10">
+                        <h3 className="text-white font-semibold text-lg mb-4 flex items-center gap-2">
+                          <FaEnvelope className="text-blue-400" />
+                          Proposal Generation
+                        </h3>
+                        
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-300">Auto-generate proposals</span>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={automationSettings.proposalGeneration.autoGenerate}
+                                onChange={(e) => setAutomationSettings({
+                                  ...automationSettings,
+                                  proposalGeneration: {...automationSettings.proposalGeneration, autoGenerate: e.target.checked}
+                                })}
+                                className="sr-only peer"
+                              />
+                              <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                            </label>
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-300">Include company research</span>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={automationSettings.proposalGeneration.includeCompanyResearch}
+                                onChange={(e) => setAutomationSettings({
+                                  ...automationSettings,
+                                  proposalGeneration: {...automationSettings.proposalGeneration, includeCompanyResearch: e.target.checked}
+                                })}
+                                className="sr-only peer"
+                              />
+                              <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                            </label>
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-300">Personalize greeting</span>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={automationSettings.proposalGeneration.personalizeGreeting}
+                                onChange={(e) => setAutomationSettings({
+                                  ...automationSettings,
+                                  proposalGeneration: {...automationSettings.proposalGeneration, personalizeGreeting: e.target.checked}
+                                })}
+                                className="sr-only peer"
+                              />
+                              <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                            </label>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium text-white mb-2">Proposal Tone</label>
+                              <select
+                                value={automationSettings.proposalGeneration.tone}
+                                onChange={(e) => setAutomationSettings({
+                                  ...automationSettings,
+                                  proposalGeneration: {...automationSettings.proposalGeneration, tone: e.target.value as 'casual' | 'professional' | 'formal'}
+                                })}
+                                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                              >
+                                <option value="casual" className="bg-gray-800">Casual</option>
+                                <option value="professional" className="bg-gray-800">Professional</option>
+                                <option value="formal" className="bg-gray-800">Formal</option>
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-white mb-2">Max Length (words)</label>
+                              <input
+                                type="number"
+                                min="200"
+                                max="1000"
+                                value={automationSettings.proposalGeneration.maxLength}
+                                onChange={(e) => setAutomationSettings({
+                                  ...automationSettings,
+                                  proposalGeneration: {...automationSettings.proposalGeneration, maxLength: parseInt(e.target.value)}
+                                })}
+                                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Email Outreach Settings */}
+                      <div className="p-6 bg-white/5 rounded-xl border border-white/10">
+                        <h3 className="text-white font-semibold text-lg mb-4 flex items-center gap-2">
+                          <FaEnvelope className="text-green-400" />
+                          Email Outreach
+                        </h3>
+                        
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-300">Auto-send emails</span>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={automationSettings.emailOutreach.autoSend}
+                                onChange={(e) => setAutomationSettings({
+                                  ...automationSettings,
+                                  emailOutreach: {...automationSettings.emailOutreach, autoSend: e.target.checked}
+                                })}
+                                className="sr-only peer"
+                              />
+                              <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                            </label>
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-300">Enable follow-ups</span>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={automationSettings.emailOutreach.followUpEnabled}
+                                onChange={(e) => setAutomationSettings({
+                                  ...automationSettings,
+                                  emailOutreach: {...automationSettings.emailOutreach, followUpEnabled: e.target.checked}
+                                })}
+                                className="sr-only peer"
+                              />
+                              <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                            </label>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium text-white mb-2">Follow-up Delay (days)</label>
+                              <input
+                                type="number"
+                                min="1"
+                                max="14"
+                                value={automationSettings.emailOutreach.followUpDelay}
+                                onChange={(e) => setAutomationSettings({
+                                  ...automationSettings,
+                                  emailOutreach: {...automationSettings.emailOutreach, followUpDelay: parseInt(e.target.value)}
+                                })}
+                                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-white mb-2">Max Follow-ups</label>
+                              <input
+                                type="number"
+                                min="1"
+                                max="5"
+                                value={automationSettings.emailOutreach.maxFollowUps}
+                                onChange={(e) => setAutomationSettings({
+                                  ...automationSettings,
+                                  emailOutreach: {...automationSettings.emailOutreach, maxFollowUps: parseInt(e.target.value)}
+                                })}
+                                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-white mb-2">Email Signature</label>
+                            <textarea
+                              value={automationSettings.emailOutreach.customSignature}
+                              onChange={(e) => setAutomationSettings({
+                                ...automationSettings,
+                                emailOutreach: {...automationSettings.emailOutreach, customSignature: e.target.value}
+                              })}
+                              rows={3}
+                              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                              placeholder="Your email signature..."
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Interview Preparation Settings */}
+                      <div className="p-6 bg-white/5 rounded-xl border border-white/10">
+                        <h3 className="text-white font-semibold text-lg mb-4 flex items-center gap-2">
+                          <FaCalendarAlt className="text-orange-400" />
+                          Interview Preparation
+                        </h3>
+                        
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-300">Auto-generate interview prep</span>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={automationSettings.interviewPrep.autoGenerate}
+                                onChange={(e) => setAutomationSettings({
+                                  ...automationSettings,
+                                  interviewPrep: {...automationSettings.interviewPrep, autoGenerate: e.target.checked}
+                                })}
+                                className="sr-only peer"
+                              />
+                              <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                            </label>
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-300">Include company research</span>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={automationSettings.interviewPrep.includeCompanyResearch}
+                                onChange={(e) => setAutomationSettings({
+                                  ...automationSettings,
+                                  interviewPrep: {...automationSettings.interviewPrep, includeCompanyResearch: e.target.checked}
+                                })}
+                                className="sr-only peer"
+                              />
+                              <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                            </label>
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-300">Generate practice questions</span>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={automationSettings.interviewPrep.generateQuestions}
+                                onChange={(e) => setAutomationSettings({
+                                  ...automationSettings,
+                                  interviewPrep: {...automationSettings.interviewPrep, generateQuestions: e.target.checked}
+                                })}
+                                className="sr-only peer"
+                              />
+                              <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                            </label>
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-300">Mock interview sessions</span>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={automationSettings.interviewPrep.mockInterviewEnabled}
+                                onChange={(e) => setAutomationSettings({
+                                  ...automationSettings,
+                                  interviewPrep: {...automationSettings.interviewPrep, mockInterviewEnabled: e.target.checked}
+                                })}
+                                className="sr-only peer"
+                              />
+                              <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Analytics Settings */}
+                      <div className="p-6 bg-white/5 rounded-xl border border-white/10">
+                        <h3 className="text-white font-semibold text-lg mb-4 flex items-center gap-2">
+                          <FaChartLine className="text-purple-400" />
+                          Analytics & Tracking
+                        </h3>
+                        
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-300">Track application performance</span>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={automationSettings.analytics.trackApplications}
+                                onChange={(e) => setAutomationSettings({
+                                  ...automationSettings,
+                                  analytics: {...automationSettings.analytics, trackApplications: e.target.checked}
+                                })}
+                                className="sr-only peer"
+                              />
+                              <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                            </label>
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-300">Email tracking</span>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={automationSettings.analytics.trackEmails}
+                                onChange={(e) => setAutomationSettings({
+                                  ...automationSettings,
+                                  analytics: {...automationSettings.analytics, trackEmails: e.target.checked}
+                                })}
+                                className="sr-only peer"
+                              />
+                              <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                            </label>
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-300">AI recommendations</span>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={automationSettings.analytics.aiRecommendations}
+                                onChange={(e) => setAutomationSettings({
+                                  ...automationSettings,
+                                  analytics: {...automationSettings.analytics, aiRecommendations: e.target.checked}
+                                })}
+                                className="sr-only peer"
+                              />
+                              <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Save Button */}
+                      <div className="flex justify-end">
+                        <button
+                          onClick={() => {
+                            // Save automation settings logic here
+                            console.log('Saving automation settings:', automationSettings);
+                            setSaveStatus('saved');
+                            setTimeout(() => setSaveStatus('idle'), 2000);
+                          }}
+                          className="flex items-center gap-2 px-6 py-3 bg-white text-black rounded-lg font-medium hover:bg-gray-100 transition-colors duration-200"
+                        >
+                          <FaSave className="w-4 h-4" />
+                          Save Automation Settings
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 

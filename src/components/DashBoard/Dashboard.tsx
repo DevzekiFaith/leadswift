@@ -7,6 +7,9 @@ import Compliance from '../Compliance/Compliance';
 import LeadDiscovery from "../LeadDiscovery/LeadDiscovery";
 import PitchComposer from "../PitchComposer/PitchComposer";
 import AIAssistant from "../AI/AIAssistant";
+import AutomationDashboard from "../Automation/AutomationDashboard";
+import JobApplicationWorkflow from "../Automation/JobApplicationWorkflow";
+import AnalyticsDashboard from "../Automation/AnalyticsDashboard";
 import {
   FaUsers,
   FaSearch,
@@ -15,7 +18,13 @@ import {
   FaGem,
   FaCog,
   FaSignOutAlt,
+  FaChartLine,
+  FaGlobe,
+  FaEnvelope,
   FaRocket,
+  FaStar,
+  FaRobot,
+  FaTasks,
   FaPlus
 } from "react-icons/fa";
 
@@ -25,31 +34,40 @@ const mockLeads = [
     id: 1,
     name: "Sarah Johnson",
     company: "TechCorp Solutions",
+    email: "contact@techstartup.com",
     country: "US",
+    budget: "$50,000",
+    urgency: "High",
     status: "Hot",
     interestLevel: 85,
-    budget: "$50,000",
-    industry: "Technology"
+    industry: "Technology",
+    description: "Looking for a full-stack developer for a fintech project"
   },
   {
     id: 2,
     name: "James Ochieng",
     company: "Nairobi Digital Hub",
+    email: "hello@digitalagency.co.uk",
     country: "KE",
+    budget: "$15,000",
+    urgency: "Medium",
     status: "New",
     interestLevel: 65,
-    budget: "$15,000",
-    industry: "Marketing"
+    industry: "Marketing",
+    description: "Need a React developer for client dashboard"
   },
   {
     id: 3,
     name: "Emma Williams",
     company: "London Fintech Ltd",
+    email: "dev@ecommerce.ca",
     country: "GB",
+    budget: "$75,000",
+    urgency: "Low",
     status: "Closed",
     interestLevel: 95,
-    budget: "$75,000",
-    industry: "Finance"
+    industry: "Finance",
+    description: "Seeking backend developer for payment integration"
   }
 ];
 
@@ -57,6 +75,9 @@ const sidebarItems = [
   { name: "Leads", icon: FaUsers, active: true },
   { name: "Lead Discovery", icon: FaSearch, active: false },
   { name: "Pitch Composer", icon: FaMagic, active: false },
+  { name: "Automation", icon: FaRobot, active: false },
+  { name: "Job Workflow", icon: FaTasks, active: false },
+  { name: "Analytics", icon: FaChartLine, active: false },
   { name: "Compliance", icon: FaCheckCircle, active: false },
   { name: "Subscription", icon: FaGem, active: false },
   { name: "Settings", icon: FaCog, active: false },
@@ -302,6 +323,18 @@ export default function Dashboard({ user }: { user: User }) {
 
           {activeSection === "Pitch Composer" && (
             <PitchComposer user={user} />
+          )}
+
+          {activeSection === "Automation" && (
+            <AutomationDashboard user={user} />
+          )}
+
+          {activeSection === "Job Workflow" && (
+            <JobApplicationWorkflow user={user} />
+          )}
+
+          {activeSection === "Analytics" && (
+            <AnalyticsDashboard user={user} />
           )}
 
           {activeSection === "Subscription" && (
