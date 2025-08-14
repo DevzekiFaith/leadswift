@@ -522,7 +522,16 @@ export class ApolloAPI {
 
 // Main Real-Time Lead API Service
 export class RealTimeLeadAPI {
-  static async searchAllPlatforms(filters: LeadFilters, selectedPlatforms: string[]): Promise<DiscoveredLead[]> {
+  static async searchAllPlatforms(
+    filters: LeadFilters, 
+    selectedPlatforms: string[], 
+    config?: {
+      cacheTimeout?: number;
+      maxResultsPerPlatform?: number;
+      rateLimitBuffer?: number;
+      requestTimeout?: number;
+    }
+  ): Promise<DiscoveredLead[]> {
     const promises: Promise<DiscoveredLead[]>[] = [];
     
     selectedPlatforms.forEach(platform => {

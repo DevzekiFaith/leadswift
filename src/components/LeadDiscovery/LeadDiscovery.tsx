@@ -1,8 +1,7 @@
-import { useState, useEffect } from "react";
-import type { User } from "@supabase/supabase-js";
-import InstantScoring from "../AI/InstantScoring";
-import { LeadData } from "../../services/api";
-import RealTimeLeadAPI from "../../services/realTimeLeadAPI";
+import React, { useState, useEffect } from 'react';
+import { FaSearch, FaFilter, FaLinkedin, FaTwitter, FaGlobe, FaEnvelope, FaPhone, FaMapMarkerAlt, FaDollarSign, FaClock, FaExclamationTriangle, FaCheckCircle, FaSpinner, FaTimes } from 'react-icons/fa';
+import { RealTimeLeadAPI } from '../../services/realTimeLeadAPI';
+import { useSettings } from '../../contexts/SettingsContext';
 
 export interface LeadFilters {
   industry: string;
@@ -223,37 +222,55 @@ const platforms = [
   "Crunchbase", "Company Websites", "Twitter", "Industry Forums"
 ];
 
-interface LeadDiscoveryProps {
-  user: User;
-  userPlan: string;
-}
-
-export default function LeadDiscovery({ user, userPlan }: LeadDiscoveryProps) {
+export default function LeadDiscovery() {
+  const { settings } = useSettings();
+  
+  // Initialize filters with user preferences from Settings
   const [filters, setFilters] = useState<LeadFilters>({
-    industry: "All Industries",
-    location: "Global",
-    budgetRange: "Any Budget",
-    urgency: "Any",
+    industry: 'All Industries',
+    location: 'Global',
+    budgetRange: 'Any Budget',
+    urgency: 'Any',
     platforms: []
   });
-  
   const [discoveredLeads, setDiscoveredLeads] = useState<DiscoveredLead[]>([]);
-  const [searchProgress, setSearchProgress] = useState(0);
   const [isSearching, setIsSearching] = useState(false);
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [currentFilters, setCurrentFilters] = useState<Partial<LeadData>>({});
+  const [searchProgress, setSearchProgress] = useState(0);
+  const [searchPlatforms, setSearchPlatforms] = useState<{[key: string]: boolean}>({});
+  const [apiErrors, setApiErrors] = useState<string[]>([]);
+  
+  // Use API settings from Settings context
+  const [useRealTimeAPI, setUseRealTimeAPI] = useState(false);
+  const [userPlan, setUserPlan] = useState<'starter' | 'pro' | 'elite'>('pro'); // This would come from user context/auth
+  
+  const availablePlatforms = ['LinkedIn', 'Upwork', 'AngelList', 'Crunchbase', 'Twitter', 'Behance'];
+
+  // Sync with Settings context when preferences change
+  useEffect(() => {
+    if (settings) {
+      setFilters(prev => ({
+        ...prev,
+        industry: settings.searchPreferences.defaultIndustry || prev.industry,
+        location: settings.searchPreferences.defaultLocation || prev.location,
+        budgetRange: settings.searchPreferences.defaultBudgetRange || prev.budgetRange,
+        urgency: settings.searchPreferences.defaultUrgency || prev.urgency,
+        platforms: settings.searchPreferences.preferredPlatforms.length > 0 
+          ? settings.searchPreferences.preferredPlatforms 
+          : prev.platforms
+      }));
+      setUseRealTimeAPI(settings.apiSettings.useRealTimeAPI);
+    }
+  }, [settings]);
+
   const [selectedLead, setSelectedLead] = useState<DiscoveredLead | null>(null);
   const [generatingPitch, setGeneratingPitch] = useState<string | null>(null);
   const [contactingLead, setContactingLead] = useState<string | null>(null);
-  const [searchPlatforms, setSearchPlatforms] = useState<{[key: string]: boolean}>({});
-  const [useRealTimeAPI, setUseRealTimeAPI] = useState<boolean>(true);
-  const [apiErrors, setApiErrors] = useState<string[]>([]);
 
   const togglePlatform = (platform: string) => {
     const newPlatforms = filters.platforms.includes(platform)
       ? filters.platforms.filter(p => p !== platform)
       : [...filters.platforms, platform];
-    setFilters({...filters, platforms: newPlatforms});
+    setFilters({ ...filters, platforms: newPlatforms });
   };
 
   // Enhanced search functionality with dynamic lead generation
@@ -321,12 +338,25 @@ export default function LeadDiscovery({ user, userPlan }: LeadDiscoveryProps) {
     setSearchPlatforms({});
     setApiErrors([]);
 
-    const selectedPlatforms = filters.platforms.length > 0 ? filters.platforms : platforms;
+    // Use preferred platforms from Settings if available, otherwise use selected platforms
+    const selectedPlatforms = filters.platforms.length > 0 
+      ? filters.platforms 
+      : settings?.searchPreferences.preferredPlatforms.length > 0
+        ? settings.searchPreferences.preferredPlatforms
+        : availablePlatforms;
     
     try {
-      if (useRealTimeAPI) {
-        // Use Real-Time API Service
+      // Use real-time API based on Settings context
+      const shouldUseRealTime = settings?.apiSettings.useRealTimeAPI && useRealTimeAPI;
+      
+      if (shouldUseRealTime) {
+        // Use Real-Time API Service with Settings configuration
         console.log('🔍 Starting real-time API search across platforms:', selectedPlatforms);
+        console.log('📋 Using Settings preferences:', {
+          cacheTimeout: settings?.apiSettings.cacheTimeout,
+          maxResults: settings?.apiSettings.maxResultsPerPlatform,
+          fallback: settings?.apiSettings.fallbackToSimulation
+        });
         
         // Set all platforms as searching
         const platformStatus: {[key: string]: boolean} = {};
@@ -346,8 +376,17 @@ export default function LeadDiscovery({ user, userPlan }: LeadDiscoveryProps) {
           });
         }, 500);
 
-        // Call real-time API service
-        const realTimeResults = await RealTimeLeadAPI.searchAllPlatforms(filters, selectedPlatforms);
+        // Call real-time API service with Settings configuration
+        const realTimeResults = await RealTimeLeadAPI.searchAllPlatforms(
+          filters, 
+          selectedPlatforms,
+          {
+            cacheTimeout: settings?.apiSettings.cacheTimeout || 300000,
+            maxResultsPerPlatform: settings?.apiSettings.maxResultsPerPlatform || 10,
+            rateLimitBuffer: settings?.apiSettings.rateLimitBuffer || 20,
+            requestTimeout: settings?.apiSettings.requestTimeout || 30000
+          }
+        );
         
         clearInterval(progressInterval);
         setSearchProgress(100);
@@ -366,7 +405,7 @@ export default function LeadDiscovery({ user, userPlan }: LeadDiscoveryProps) {
         
       } else {
         // Fallback to enhanced simulation
-        console.log('🔄 Using enhanced simulation mode');
+        console.log('🔄 Using enhanced simulation mode (Settings preference or API disabled)');
         await handleSimulatedSearch(selectedPlatforms);
       }
       
@@ -374,9 +413,13 @@ export default function LeadDiscovery({ user, userPlan }: LeadDiscoveryProps) {
       console.error('❌ Real-time API search failed:', error);
       setApiErrors([`Search failed: ${error instanceof Error ? error.message : 'Unknown error'}`]);
       
-      // Fallback to simulation
-      console.log('🔄 Falling back to enhanced simulation');
-      await handleSimulatedSearch(selectedPlatforms);
+      // Fallback to simulation if enabled in Settings
+      if (settings?.apiSettings.fallbackToSimulation) {
+        console.log('🔄 Falling back to enhanced simulation (Settings enabled)');
+        await handleSimulatedSearch(selectedPlatforms);
+      } else {
+        console.log('❌ Fallback disabled in Settings - search failed');
+      }
     }
     
     setIsSearching(false);
@@ -442,9 +485,9 @@ export default function LeadDiscovery({ user, userPlan }: LeadDiscoveryProps) {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       const pitchTemplates = {
-        SaaS: `Hi ${lead.name},\n\nI noticed ${lead.company} is in the ${lead.industry} space. I help companies like yours scale their marketing efforts in global markets.\n\nGiven your current needs (${lead.description}), I believe we could help you achieve significant growth.\n\nWould you be open to a 15-minute call to discuss how we've helped similar companies increase their revenue by 40%?\n\nBest regards,\n${user.user_metadata?.full_name || 'Your Name'}`,
-        Fintech: `Hello ${lead.name},\n\nI see ${lead.company} is expanding in the fintech sector. As someone who specializes in helping fintech companies navigate global markets, I'd love to connect.\n\nYour mention of "${lead.description}" resonates with challenges I've helped other fintech leaders solve.\n\nCould we schedule a brief call to explore potential synergies?\n\nBest,\n${user.user_metadata?.full_name || 'Your Name'}`,
-        default: `Dear ${lead.name},\n\nI came across ${lead.company} and was impressed by your work in ${lead.industry}.\n\nBased on your current priorities: "${lead.description}", I believe there's potential for collaboration.\n\nWould you be interested in a quick conversation to explore how we might work together?\n\nRegards,\n${user.user_metadata?.full_name || 'Your Name'}`
+        SaaS: `Hi ${lead.name},\n\nI noticed ${lead.company} is in the ${lead.industry} space. I help companies like yours scale their marketing efforts in global markets.\n\nGiven your current needs (${lead.description}), I believe we could help you achieve significant growth.\n\nWould you be open to a 15-minute call to discuss how we've helped similar companies increase their revenue by 40%?\n\nBest regards,\n${settings?.profile.fullName || 'Your Name'}`,
+        Fintech: `Hello ${lead.name},\n\nI see ${lead.company} is expanding in the fintech sector. As someone who specializes in helping fintech companies navigate global markets, I'd love to connect.\n\nYour mention of "${lead.description}" resonates with challenges I've helped other fintech leaders solve.\n\nCould we schedule a brief call to explore potential synergies?\n\nBest,\n${settings?.profile.fullName || 'Your Name'}`,
+        default: `Dear ${lead.name},\n\nI came across ${lead.company} and was impressed by your work in ${lead.industry}.\n\nBased on your current priorities: "${lead.description}", I believe there's potential for collaboration.\n\nWould you be interested in a quick conversation to explore how we might work together?\n\nRegards,\n${settings?.profile.fullName || 'Your Name'}`
       };
       
       const pitch = pitchTemplates[lead.industry as keyof typeof pitchTemplates] || pitchTemplates.default;
@@ -617,7 +660,7 @@ export default function LeadDiscovery({ user, userPlan }: LeadDiscoveryProps) {
         <div className="mb-8">
           <label className="block text-sm font-medium text-gray-300 mb-4"> Platforms to Search</label>
           <div className="flex flex-wrap gap-3">
-            {platforms.map(platform => (
+            {availablePlatforms.map(platform => (
               <button
                 key={platform}
                 onClick={() => togglePlatform(platform)}

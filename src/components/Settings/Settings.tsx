@@ -2,97 +2,85 @@
 
 import { useState, useEffect } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
-import { User } from '@supabase/supabase-js';
+import type { User } from '@supabase/supabase-js';
+import { useSettings, UserProfile } from '../../contexts/SettingsContext';
 import {
   FaUser,
   FaBell,
   FaLock,
+  FaCog,
   FaGlobe,
-  FaEye,
   FaDatabase,
   FaDownload,
   FaTrash,
-  FaSave,
+  FaSearch,
+  FaEye,
   FaCheck,
-  FaTimes
+  FaTimes,
+  FaSave
 } from 'react-icons/fa';
 
-interface UserSettings {
-  email_notifications: boolean;
-  push_notifications: boolean;
-  marketing_emails: boolean;
-  privacy_mode: boolean;
-  data_retention: string;
-  language: string;
-  timezone: string;
-  theme: string;
+interface SettingsProps {
+  user: User;
 }
 
-interface UserProfile {
-  full_name: string;
-  company: string;
-  job_title: string;
-  phone: string;
-  bio: string;
-}
-
-export default function Settings() {
-  const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<UserProfile>({
-    full_name: '',
-    company: '',
-    job_title: '',
-    phone: '',
-    bio: ''
-  });
-  const [settings, setSettings] = useState<UserSettings>({
-    email_notifications: true,
-    push_notifications: true,
-    marketing_emails: false,
-    privacy_mode: false,
-    data_retention: '12_months',
-    language: 'en',
-    timezone: 'UTC',
-    theme: 'dark'
-  });
+export default function Settings({ user }: SettingsProps) {
+  const { settings, updateProfile, updateNotifications, updatePrivacy, updateSearchPreferences, updateAPISettings, isLoading } = useSettings();
   const [activeTab, setActiveTab] = useState('profile');
+  
+  // Local state for form inputs (synced with context)
+  const [profile, setProfile] = useState(settings.profile);
+  const [notifications, setNotifications] = useState(settings.notifications);
+  const [privacy, setPrivacy] = useState(settings.privacy);
+  const [searchPreferences, setSearchPreferences] = useState(settings.searchPreferences);
+  const [apiSettings, setApiSettings] = useState(settings.apiSettings);
+  const [preferences, setPreferences] = useState({
+    language: settings.language,
+    timezone: settings.timezone,
+    theme: settings.theme
+  });
+  const [dataManagement, setDataManagement] = useState(settings.dataManagement);
+
+  // Sync local state with context when settings change
+  useEffect(() => {
+    setProfile(settings.profile);
+    setNotifications(settings.notifications);
+    setPrivacy(settings.privacy);
+    setSearchPreferences(settings.searchPreferences);
+    setApiSettings(settings.apiSettings);
+    setPreferences({
+      language: settings.language,
+      timezone: settings.timezone,
+      theme: settings.theme
+    });
+    setDataManagement(settings.dataManagement);
+  }, [settings]);
+
   const [loading, setLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
-  // Initialize Supabase browser client using SSR
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
+  // Initialize profile from user prop if available
   useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-      
-      if (user) {
-        // Load user profile and settings from database
-        // This would be implemented with actual Supabase queries
-        setProfile({
-          full_name: user.user_metadata?.full_name || '',
-          company: user.user_metadata?.company || '',
-          job_title: user.user_metadata?.job_title || '',
-          phone: user.user_metadata?.phone || '',
-          bio: user.user_metadata?.bio || ''
-        });
-      }
-    };
+    if (user) {
+      // Load user profile from user metadata
+      setProfile(prev => ({
+        ...prev,
+        fullName: user.user_metadata?.full_name || prev.fullName,
+        company: user.user_metadata?.company || prev.company,
+        jobTitle: user.user_metadata?.job_title || prev.jobTitle,
+        phone: user.user_metadata?.phone || prev.phone,
+        bio: user.user_metadata?.bio || prev.bio
+      }));
+    }
+  }, [user]);
 
-    getUser();
-  }, [supabase]);
-
+  // Save profile changes using SettingsContext
   const handleSaveProfile = async () => {
     setLoading(true);
     setSaveStatus('saving');
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await updateProfile(profile);
       setSaveStatus('saved');
       setTimeout(() => setSaveStatus('idle'), 2000);
     } catch (error) {
@@ -103,20 +91,14 @@ export default function Settings() {
     }
   };
 
-  const handleSettingChange = (key: keyof UserSettings, value: any) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
-  };
-
-  const handleProfileChange = (key: keyof UserProfile, value: string) => {
-    setProfile(prev => ({ ...prev, [key]: value }));
-  };
-
   const tabs = [
-    { id: 'profile', label: 'Profile', icon: FaUser },
-    { id: 'notifications', label: 'Notifications', icon: FaBell },
-    { id: 'privacy', label: 'Privacy & Security', icon: FaLock },
-    { id: 'preferences', label: 'Preferences', icon: FaGlobe },
-    { id: 'data', label: 'Data Management', icon: FaDatabase }
+    { id: 'profile', name: 'Profile', icon: FaUser },
+    { id: 'notifications', name: 'Notifications', icon: FaBell },
+    { id: 'privacy', name: 'Privacy & Security', icon: FaLock },
+    { id: 'search', name: 'Search Preferences', icon: FaSearch },
+    { id: 'api', name: 'API Settings', icon: FaCog },
+    { id: 'preferences', name: 'Preferences', icon: FaCog },
+    { id: 'data', name: 'Data Management', icon: FaDatabase }
   ];
 
   return (
@@ -160,7 +142,7 @@ export default function Settings() {
                       }`}
                     >
                       <Icon className="w-4 h-4" />
-                      {tab.label}
+                      {tab.name}
                     </button>
                   );
                 })}
@@ -185,8 +167,8 @@ export default function Settings() {
                       <label className="block text-sm font-medium text-white mb-2">Full Name</label>
                       <input
                         type="text"
-                        value={profile.full_name}
-                        onChange={(e) => handleProfileChange('full_name', e.target.value)}
+                        value={profile.fullName}
+                        onChange={(e) => setProfile({...profile, fullName: e.target.value})}
                         className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent"
                         placeholder="Enter your full name"
                       />
@@ -207,7 +189,7 @@ export default function Settings() {
                       <input
                         type="text"
                         value={profile.company}
-                        onChange={(e) => handleProfileChange('company', e.target.value)}
+                        onChange={(e) => setProfile({...profile, company: e.target.value})}
                         className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent"
                         placeholder="Enter your company"
                       />
@@ -217,8 +199,8 @@ export default function Settings() {
                       <label className="block text-sm font-medium text-white mb-2">Job Title</label>
                       <input
                         type="text"
-                        value={profile.job_title}
-                        onChange={(e) => handleProfileChange('job_title', e.target.value)}
+                        value={profile.jobTitle}
+                        onChange={(e) => setProfile({...profile, jobTitle: e.target.value})}
                         className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent"
                         placeholder="Enter your job title"
                       />
@@ -229,7 +211,7 @@ export default function Settings() {
                       <input
                         type="tel"
                         value={profile.phone}
-                        onChange={(e) => handleProfileChange('phone', e.target.value)}
+                        onChange={(e) => setProfile({...profile, phone: e.target.value})}
                         className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent"
                         placeholder="Enter your phone number"
                       />
@@ -240,7 +222,7 @@ export default function Settings() {
                     <label className="block text-sm font-medium text-white mb-2">Bio</label>
                     <textarea
                       value={profile.bio}
-                      onChange={(e) => handleProfileChange('bio', e.target.value)}
+                      onChange={(e) => setProfile({...profile, bio: e.target.value})}
                       rows={4}
                       className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent resize-none"
                       placeholder="Tell us about yourself..."
@@ -289,14 +271,18 @@ export default function Settings() {
                         <p className="text-sm text-gray-400">Receive notifications via email</p>
                       </div>
                       <button
-                        onClick={() => handleSettingChange('email_notifications', !settings.email_notifications)}
+                        onClick={() => {
+                          const newNotifications = {...notifications, emailNotifications: !notifications.emailNotifications};
+                          setNotifications(newNotifications);
+                          updateNotifications(newNotifications);
+                        }}
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${
-                          settings.email_notifications ? 'bg-white' : 'bg-gray-600'
+                          notifications.emailNotifications ? 'bg-white' : 'bg-gray-600'
                         }`}
                       >
                         <span
                           className={`inline-block h-4 w-4 transform rounded-full bg-black transition-transform duration-200 ${
-                            settings.email_notifications ? 'translate-x-6' : 'translate-x-1'
+                            notifications.emailNotifications ? 'translate-x-6' : 'translate-x-1'
                           }`}
                         />
                       </button>
@@ -308,14 +294,18 @@ export default function Settings() {
                         <p className="text-sm text-gray-400">Receive push notifications in your browser</p>
                       </div>
                       <button
-                        onClick={() => handleSettingChange('push_notifications', !settings.push_notifications)}
+                        onClick={() => {
+                          const newNotifications = {...notifications, pushNotifications: !notifications.pushNotifications};
+                          setNotifications(newNotifications);
+                          updateNotifications(newNotifications);
+                        }}
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${
-                          settings.push_notifications ? 'bg-white' : 'bg-gray-600'
+                          notifications.pushNotifications ? 'bg-white' : 'bg-gray-600'
                         }`}
                       >
                         <span
                           className={`inline-block h-4 w-4 transform rounded-full bg-black transition-transform duration-200 ${
-                            settings.push_notifications ? 'translate-x-6' : 'translate-x-1'
+                            notifications.pushNotifications ? 'translate-x-6' : 'translate-x-1'
                           }`}
                         />
                       </button>
@@ -327,14 +317,18 @@ export default function Settings() {
                         <p className="text-sm text-gray-400">Receive updates about new features and promotions</p>
                       </div>
                       <button
-                        onClick={() => handleSettingChange('marketing_emails', !settings.marketing_emails)}
+                        onClick={() => {
+                          const newNotifications = {...notifications, marketingEmails: !notifications.marketingEmails};
+                          setNotifications(newNotifications);
+                          updateNotifications(newNotifications);
+                        }}
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${
-                          settings.marketing_emails ? 'bg-white' : 'bg-gray-600'
+                          notifications.marketingEmails ? 'bg-white' : 'bg-gray-600'
                         }`}
                       >
                         <span
                           className={`inline-block h-4 w-4 transform rounded-full bg-black transition-transform duration-200 ${
-                            settings.marketing_emails ? 'translate-x-6' : 'translate-x-1'
+                            notifications.marketingEmails ? 'translate-x-6' : 'translate-x-1'
                           }`}
                         />
                       </button>
@@ -358,14 +352,18 @@ export default function Settings() {
                         <p className="text-sm text-gray-400">Hide your activity from other users</p>
                       </div>
                       <button
-                        onClick={() => handleSettingChange('privacy_mode', !settings.privacy_mode)}
+                        onClick={() => {
+                          const newPrivacy = {...privacy, privacyMode: !privacy.privacyMode};
+                          setPrivacy(newPrivacy);
+                          updatePrivacy(newPrivacy);
+                        }}
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${
-                          settings.privacy_mode ? 'bg-white' : 'bg-gray-600'
+                          privacy.privacyMode ? 'bg-white' : 'bg-gray-600'
                         }`}
                       >
                         <span
                           className={`inline-block h-4 w-4 transform rounded-full bg-black transition-transform duration-200 ${
-                            settings.privacy_mode ? 'translate-x-6' : 'translate-x-1'
+                            privacy.privacyMode ? 'translate-x-6' : 'translate-x-1'
                           }`}
                         />
                       </button>
@@ -390,6 +388,291 @@ export default function Settings() {
                 </div>
               )}
 
+              {/* Search Preferences Tab */}
+              {activeTab === 'search' && (
+                <div className="space-y-8">
+                  <div>
+                    <h2 className="text-2xl font-bold text-white mb-2">Search Preferences</h2>
+                    <p className="text-sm text-gray-400 mb-6">Configure default search filters and behavior for Lead Discovery.</p>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-lg font-semibold text-white mb-4">Default Search Filters</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="p-4 bg-white/5 rounded-lg border border-white/10">
+                          <label className="block text-sm font-medium text-white mb-3">Default Industry</label>
+                          <select
+                            value={searchPreferences.defaultIndustry}
+                            onChange={(e) => {
+                              const newPrefs = {...searchPreferences, defaultIndustry: e.target.value};
+                              setSearchPreferences(newPrefs);
+                              updateSearchPreferences(newPrefs);
+                            }}
+                            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-white/30"
+                          >
+                            <option value="All Industries">All Industries</option>
+                            <option value="SaaS">SaaS</option>
+                            <option value="Fintech">Fintech</option>
+                            <option value="E-commerce">E-commerce</option>
+                            <option value="Healthcare">Healthcare</option>
+                            <option value="CleanTech">CleanTech</option>
+                            <option value="EdTech">EdTech</option>
+                          </select>
+                        </div>
+                        <div className="p-4 bg-white/5 rounded-lg border border-white/10">
+                          <label className="block text-sm font-medium text-white mb-3">Default Location</label>
+                          <select
+                            value={searchPreferences.defaultLocation}
+                            onChange={(e) => {
+                              const newPrefs = {...searchPreferences, defaultLocation: e.target.value};
+                              setSearchPreferences(newPrefs);
+                              updateSearchPreferences(newPrefs);
+                            }}
+                            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-white/30"
+                          >
+                            <option value="Global">Global</option>
+                            <option value="North America">North America</option>
+                            <option value="Europe">Europe</option>
+                            <option value="Asia">Asia</option>
+                          </select>
+                        </div>
+                        <div className="p-4 bg-white/5 rounded-lg border border-white/10">
+                          <label className="block text-sm font-medium text-white mb-3">Default Budget Range</label>
+                          <select
+                            value={searchPreferences.defaultBudgetRange}
+                            onChange={(e) => {
+                              const newPrefs = {...searchPreferences, defaultBudgetRange: e.target.value};
+                              setSearchPreferences(newPrefs);
+                              updateSearchPreferences(newPrefs);
+                            }}
+                            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-white/30"
+                          >
+                            <option value="Any Budget">Any Budget</option>
+                            <option value="$5,000 - $15,000">$5,000 - $15,000</option>
+                            <option value="$15,000 - $30,000">$15,000 - $30,000</option>
+                            <option value="$30,000 - $50,000">$30,000 - $50,000</option>
+                            <option value="$50,000 - $100,000">$50,000 - $100,000</option>
+                            <option value="$100,000+">$100,000+</option>
+                          </select>
+                        </div>
+                        <div className="p-4 bg-white/5 rounded-lg border border-white/10">
+                          <label className="block text-sm font-medium text-white mb-3">Default Urgency</label>
+                          <select
+                            value={searchPreferences.defaultUrgency}
+                            onChange={(e) => {
+                              const newPrefs = {...searchPreferences, defaultUrgency: e.target.value};
+                              setSearchPreferences(newPrefs);
+                              updateSearchPreferences(newPrefs);
+                            }}
+                            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-white/30"
+                          >
+                            <option value="Any">Any Urgency</option>
+                            <option value="High">High</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Low">Low</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="text-lg font-semibold text-white mb-4">Preferred Platforms</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {['LinkedIn', 'Upwork', 'AngelList', 'Crunchbase', 'Twitter', 'Behance'].map(platform => (
+                          <div key={platform} className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10">
+                            <span className="text-white text-sm">{platform}</span>
+                            <button
+                              onClick={() => {
+                                const newPlatforms = searchPreferences.preferredPlatforms.includes(platform)
+                                  ? searchPreferences.preferredPlatforms.filter(p => p !== platform)
+                                  : [...searchPreferences.preferredPlatforms, platform];
+                                const newPrefs = {...searchPreferences, preferredPlatforms: newPlatforms};
+                                setSearchPreferences(newPrefs);
+                                updateSearchPreferences(newPrefs);
+                              }}
+                              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                                searchPreferences.preferredPlatforms.includes(platform) ? 'bg-white' : 'bg-gray-600'
+                              }`}
+                            >
+                              <span className={`inline-block h-3 w-3 transform rounded-full bg-black transition-transform ${
+                                searchPreferences.preferredPlatforms.includes(platform) ? 'translate-x-5' : 'translate-x-1'
+                              }`} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="text-lg font-semibold text-white mb-4">Search Behavior</h3>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10">
+                          <div>
+                            <div className="font-medium text-white">Auto-refresh Results</div>
+                            <div className="text-sm text-gray-400">Automatically refresh search results periodically</div>
+                          </div>
+                          <button
+                            onClick={() => {
+                              const newPrefs = {...searchPreferences, autoRefresh: !searchPreferences.autoRefresh};
+                              setSearchPreferences(newPrefs);
+                              updateSearchPreferences(newPrefs);
+                            }}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                              searchPreferences.autoRefresh ? 'bg-white' : 'bg-gray-600'
+                            }`}
+                          >
+                            <span className={`inline-block h-4 w-4 transform rounded-full bg-black transition-transform ${
+                              searchPreferences.autoRefresh ? 'translate-x-6' : 'translate-x-1'
+                            }`} />
+                          </button>
+                        </div>
+                        <div className="p-4 bg-white/5 rounded-lg border border-white/10">
+                          <label className="block text-sm font-medium text-white mb-3">Search Frequency</label>
+                          <select
+                            value={searchPreferences.searchFrequency}
+                            onChange={(e) => {
+                              const newPrefs = {...searchPreferences, searchFrequency: e.target.value as 'real-time' | 'cached' | 'manual'};
+                              setSearchPreferences(newPrefs);
+                              updateSearchPreferences(newPrefs);
+                            }}
+                            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-white/30"
+                          >
+                            <option value="real-time">Real-time</option>
+                            <option value="cached">Cached (5 minutes)</option>
+                            <option value="manual">Manual only</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* API Settings Tab */}
+              {activeTab === 'api' && (
+                <div className="space-y-8">
+                  <div>
+                    <h2 className="text-2xl font-bold text-white mb-2">API Settings</h2>
+                    <p className="text-sm text-gray-400 mb-6">Configure real-time API integration and performance settings.</p>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-lg font-semibold text-white mb-4">API Configuration</h3>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10">
+                          <div>
+                            <div className="font-medium text-white">Use Real-Time APIs</div>
+                            <div className="text-sm text-gray-400">Enable live data from social platforms</div>
+                          </div>
+                          <button
+                            onClick={() => {
+                              const newApiSettings = {...apiSettings, useRealTimeAPI: !apiSettings.useRealTimeAPI};
+                              setApiSettings(newApiSettings);
+                              updateAPISettings(newApiSettings);
+                            }}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                              apiSettings.useRealTimeAPI ? 'bg-white' : 'bg-gray-600'
+                            }`}
+                          >
+                            <span className={`inline-block h-4 w-4 transform rounded-full bg-black transition-transform ${
+                              apiSettings.useRealTimeAPI ? 'translate-x-6' : 'translate-x-1'
+                            }`} />
+                          </button>
+                        </div>
+                        <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10">
+                          <div>
+                            <div className="font-medium text-white">Fallback to Simulation</div>
+                            <div className="text-sm text-gray-400">Use enhanced simulation when APIs fail</div>
+                          </div>
+                          <button
+                            onClick={() => {
+                              const newApiSettings = {...apiSettings, fallbackToSimulation: !apiSettings.fallbackToSimulation};
+                              setApiSettings(newApiSettings);
+                              updateAPISettings(newApiSettings);
+                            }}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                              apiSettings.fallbackToSimulation ? 'bg-white' : 'bg-gray-600'
+                            }`}
+                          >
+                            <span className={`inline-block h-4 w-4 transform rounded-full bg-black transition-transform ${
+                              apiSettings.fallbackToSimulation ? 'translate-x-6' : 'translate-x-1'
+                            }`} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="text-lg font-semibold text-white mb-4">Performance Settings</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="p-4 bg-white/5 rounded-lg border border-white/10">
+                          <label className="block text-sm font-medium text-white mb-3">Cache Timeout (seconds)</label>
+                          <input
+                            type="number"
+                            value={apiSettings.cacheTimeout / 1000}
+                            onChange={(e) => {
+                              const newApiSettings = {...apiSettings, cacheTimeout: parseInt(e.target.value) * 1000};
+                              setApiSettings(newApiSettings);
+                              updateAPISettings(newApiSettings);
+                            }}
+                            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-white/30"
+                            min="30"
+                            max="3600"
+                          />
+                        </div>
+                        <div className="p-4 bg-white/5 rounded-lg border border-white/10">
+                          <label className="block text-sm font-medium text-white mb-3">Max Results Per Platform</label>
+                          <input
+                            type="number"
+                            value={apiSettings.maxResultsPerPlatform}
+                            onChange={(e) => {
+                              const newApiSettings = {...apiSettings, maxResultsPerPlatform: parseInt(e.target.value)};
+                              setApiSettings(newApiSettings);
+                              updateAPISettings(newApiSettings);
+                            }}
+                            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-white/30"
+                            min="5"
+                            max="100"
+                          />
+                        </div>
+                        <div className="p-4 bg-white/5 rounded-lg border border-white/10">
+                          <label className="block text-sm font-medium text-white mb-3">Rate Limit Buffer (%)</label>
+                          <input
+                            type="number"
+                            value={apiSettings.rateLimitBuffer}
+                            onChange={(e) => {
+                              const newApiSettings = {...apiSettings, rateLimitBuffer: parseInt(e.target.value)};
+                              setApiSettings(newApiSettings);
+                              updateAPISettings(newApiSettings);
+                            }}
+                            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-white/30"
+                            min="0"
+                            max="50"
+                          />
+                        </div>
+                        <div className="p-4 bg-white/5 rounded-lg border border-white/10">
+                          <label className="block text-sm font-medium text-white mb-3">Request Timeout (ms)</label>
+                          <input
+                            type="number"
+                            value={apiSettings.requestTimeout}
+                            onChange={(e) => {
+                              const newApiSettings = {...apiSettings, requestTimeout: parseInt(e.target.value)};
+                              setApiSettings(newApiSettings);
+                              updateAPISettings(newApiSettings);
+                            }}
+                            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-white/30"
+                            min="5000"
+                            max="60000"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Preferences Tab */}
               {activeTab === 'preferences' && (
                 <div className="space-y-8">
@@ -402,8 +685,8 @@ export default function Settings() {
                     <div>
                       <label className="block text-sm font-medium text-white mb-2">Language</label>
                       <select
-                        value={settings.language}
-                        onChange={(e) => handleSettingChange('language', e.target.value)}
+                        value={preferences.language}
+                        onChange={(e) => setPreferences({...preferences, language: e.target.value})}
                         className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent"
                       >
                         <option value="en" className="bg-gray-800">English</option>
@@ -416,8 +699,8 @@ export default function Settings() {
                     <div>
                       <label className="block text-sm font-medium text-white mb-2">Timezone</label>
                       <select
-                        value={settings.timezone}
-                        onChange={(e) => handleSettingChange('timezone', e.target.value)}
+                        value={preferences.timezone}
+                        onChange={(e) => setPreferences({...preferences, timezone: e.target.value})}
                         className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent"
                       >
                         <option value="UTC" className="bg-gray-800">UTC</option>
@@ -430,13 +713,13 @@ export default function Settings() {
                     <div>
                       <label className="block text-sm font-medium text-white mb-2">Theme</label>
                       <select
-                        value={settings.theme}
-                        onChange={(e) => handleSettingChange('theme', e.target.value)}
+                        value={preferences.theme}
+                        onChange={(e) => setPreferences({...preferences, theme: e.target.value as 'light' | 'dark' | 'system'})}
                         className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent"
                       >
                         <option value="dark" className="bg-gray-800">Dark</option>
                         <option value="light" className="bg-gray-800">Light</option>
-                        <option value="auto" className="bg-gray-800">Auto</option>
+                        <option value="system" className="bg-gray-800">System</option>
                       </select>
                     </div>
                   </div>
@@ -456,14 +739,14 @@ export default function Settings() {
                       <h3 className="text-white font-medium mb-3">Data Retention</h3>
                       <p className="text-sm text-gray-400 mb-4">Choose how long to keep your data</p>
                       <select
-                        value={settings.data_retention}
-                        onChange={(e) => handleSettingChange('data_retention', e.target.value)}
+                        value={dataManagement.retentionPeriod}
+                        onChange={(e) => setDataManagement({...dataManagement, retentionPeriod: parseInt(e.target.value)})}
                         className="w-full max-w-xs px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent"
                       >
-                        <option value="3_months" className="bg-gray-800">3 Months</option>
-                        <option value="6_months" className="bg-gray-800">6 Months</option>
-                        <option value="12_months" className="bg-gray-800">12 Months</option>
-                        <option value="indefinite" className="bg-gray-800">Indefinite</option>
+                        <option value="90" className="bg-gray-800">3 Months</option>
+                        <option value="180" className="bg-gray-800">6 Months</option>
+                        <option value="365" className="bg-gray-800">12 Months</option>
+                        <option value="0" className="bg-gray-800">Indefinite</option>
                       </select>
                     </div>
 

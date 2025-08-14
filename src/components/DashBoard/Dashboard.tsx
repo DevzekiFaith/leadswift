@@ -7,12 +7,12 @@ import Compliance from '../Compliance/Compliance';
 import LeadDiscovery from "../LeadDiscovery/LeadDiscovery";
 import PitchComposer from "../PitchComposer/PitchComposer";
 import AIAssistant from "../AI/AIAssistant";
-import { 
-  FaUsers, 
-  FaSearch, 
-  FaMagic, 
-  FaCheckCircle, 
-  FaGem, 
+import {
+  FaUsers,
+  FaSearch,
+  FaMagic,
+  FaCheckCircle,
+  FaGem,
   FaCog,
   FaSignOutAlt,
   FaRocket,
@@ -88,7 +88,7 @@ export default function Dashboard({ user }: { user: User }) {
   const getCountryFlag = (countryCode: string) => {
     const flags: { [key: string]: string } = {
       "US": "🇺🇸",
-      "KE": "🇰🇪", 
+      "KE": "🇰🇪",
       "GB": "🇬🇧",
       "CA": "🇨🇦",
       "AU": "🇦🇺"
@@ -121,18 +121,16 @@ export default function Dashboard({ user }: { user: User }) {
               <button
                 key={item.name}
                 onClick={() => setActiveSection(item.name)}
-                className={`w-full flex items-center gap-4 px-6 py-4 rounded-xl text-left transition-all duration-300 transform hover:scale-[1.02] group ${
-                  activeSection === item.name
+                className={`w-full flex items-center gap-4 px-6 py-4 rounded-xl text-left transition-all duration-300 transform hover:scale-[1.02] group ${activeSection === item.name
                     ? "bg-gradient-primary text-white shadow-lg shadow-purple-500/25 border border-purple-500/30"
                     : "text-gray-300 hover:text-white hover:bg-gray-800/50 border border-transparent hover:border-gray-700/50"
-                }`}
+                  }`}
                 style={{ animationDelay: `${index * 50}ms` }}
               >
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300 ${
-                  activeSection === item.name 
-                    ? "bg-white/20" 
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300 ${activeSection === item.name
+                    ? "bg-white/20"
                     : "bg-gray-700/30 group-hover:bg-gray-600/50"
-                }`}>
+                  }`}>
                   <IconComponent className="text-lg" />
                 </div>
                 <span className="font-semibold">{item.name}</span>
@@ -161,7 +159,7 @@ export default function Dashboard({ user }: { user: User }) {
                 </div>
               </div>
             </div>
-            
+
             {/* Quick Stats */}
             <div className="grid grid-cols-2 gap-3 mb-4">
               <div className="bg-gray-700/30 rounded-lg p-3 text-center">
@@ -246,7 +244,7 @@ export default function Dashboard({ user }: { user: User }) {
                           <span className="font-bold text-white text-lg">{lead.interestLevel}%</span>
                         </div>
                         <div className="w-full bg-gray-600 rounded-full h-3 mt-2 overflow-hidden">
-                          <div 
+                          <div
                             className="bg-gradient-primary h-3 rounded-full transition-all duration-500 relative overflow-hidden"
                             style={{ width: `${lead.interestLevel}%` }}
                           >
@@ -254,7 +252,7 @@ export default function Dashboard({ user }: { user: User }) {
                           </div>
                         </div>
                       </div>
-                      
+
                       <div className="grid grid-cols-2 gap-3">
                         <div className="bg-gray-700/30 rounded-xl p-3">
                           <div className="text-xs text-gray-400 mb-1">💰 Budget</div>
@@ -268,7 +266,7 @@ export default function Dashboard({ user }: { user: User }) {
                     </div>
 
                     {/* Action Button */}
-                    <button 
+                    <button
                       onClick={() => setActiveSection("Pitch Composer")}
                       className="w-full flex items-center justify-center gap-3 py-4 bg-gradient-primary text-white rounded-xl font-bold hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300 transform hover:scale-[1.05] relative overflow-hidden group"
                     >
@@ -286,7 +284,7 @@ export default function Dashboard({ user }: { user: User }) {
                   </div>
                   <h3 className="text-xl font-bold text-white mb-3 group-hover:text-purple-300 transition-colors">Discover New Leads</h3>
                   <p className="text-sm text-gray-300 mb-6 font-medium">🌍 Use AI to find your next high-value global clients</p>
-                  <button 
+                  <button
                     onClick={() => setActiveSection("Lead Discovery")}
                     className="px-6 py-3 bg-gradient-primary text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300 transform hover:scale-[1.05] relative overflow-hidden group"
                   >
@@ -299,7 +297,7 @@ export default function Dashboard({ user }: { user: User }) {
           )}
 
           {activeSection === "Lead Discovery" && (
-            <LeadDiscovery user={user} userPlan={userPlan} />
+            <LeadDiscovery />
           )}
 
           {activeSection === "Pitch Composer" && (
@@ -307,8 +305,8 @@ export default function Dashboard({ user }: { user: User }) {
           )}
 
           {activeSection === "Subscription" && (
-            <SubscriptionPlans 
-              user={user} 
+            <SubscriptionPlans
+              user={user}
               currentPlan={userPlan}
               onPlanSelect={(planId) => setUserPlan(planId)}
             />
@@ -319,13 +317,13 @@ export default function Dashboard({ user }: { user: User }) {
           )}
 
           {activeSection === "Settings" && (
-            <Settings />
+            <Settings user={user} />
           )}
         </main>
       </div>
 
       {/* AI Assistant */}
-      <AIAssistant 
+      <AIAssistant
         activeSection={activeSection}
         userPlan={userPlan}
         onSectionChange={setActiveSection}
