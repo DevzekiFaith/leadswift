@@ -151,14 +151,33 @@ export function SettingsProvider({ children, user }: SettingsProviderProps) {
 
   // Load settings from Supabase on mount
   useEffect(() => {
-    if (user) {
-      loadUserSettings();
+    let mounted = true;
+    
+    if (user && user.id) {
+      // Only load if we don't already have settings or if user changed
+      if (mounted && (settings === defaultSettings || !settings.profile.fullName)) {
+        loadUserSettings();
+      }
     } else {
-      setIsLoading(false);
+      // Reset to defaults when user signs out
+      if (mounted) {
+        setSettings(defaultSettings);
+        setIsLoading(false);
+        setError(null);
+      }
     }
-  }, [user]);
+    
+    return () => {
+      mounted = false;
+    };
+  }, [user?.id]); // Only depend on user ID, not the entire user object
 
   const loadUserSettings = async () => {
+    if (!user?.id) {
+      setIsLoading(false);
+      return;
+    }
+    
     try {
       setIsLoading(true);
       setError(null);
@@ -166,32 +185,82 @@ export function SettingsProvider({ children, user }: SettingsProviderProps) {
       const { data, error: fetchError } = await supabase
         .from('user_settings')
         .select('*')
-        .eq('user_id', user?.id)
-        .single();
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-      if (fetchError && fetchError.code !== 'PGRST116') { // Not found error
-        throw fetchError;
+      if (fetchError) {
+        if (fetchError.code === 'PGRST116') {
+          // No settings found - this is normal for new users
+          console.log('No user settings found, using defaults');
+        } else if (fetchError.code === '42P01') {
+          // Table doesn't exist
+          console.warn('user_settings table does not exist. Using default settings.');
+          console.log('To create the table, run this SQL in your Supabase dashboard:');
+          console.log(`
+CREATE TABLE user_settings (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  settings JSONB NOT NULL DEFAULT '{}',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(user_id)
+);
+
+-- Enable RLS
+ALTER TABLE user_settings ENABLE ROW LEVEL SECURITY;
+
+-- Create policy for users to access their own settings
+CREATE POLICY "Users can view their own settings" ON user_settings
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own settings" ON user_settings
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own settings" ON user_settings
+  FOR UPDATE USING (auth.uid() = user_id);
+          `);
+        } else if (fetchError.code === 'PGRST301') {
+          // 406 Not Acceptable - likely RLS policy issue
+          console.warn('RLS policy preventing access to user_settings. Using defaults.');
+          console.log('Check your RLS policies in Supabase dashboard');
+        } else {
+          console.warn('Error fetching user settings:', fetchError.message || fetchError, 'Code:', fetchError.code);
+        }
+        // Continue with defaults for any error
       }
 
-      if (data) {
-        // Merge saved settings with defaults
-        const savedSettings = JSON.parse(data.settings || '{}');
-        setSettings(prevSettings => ({
-          ...prevSettings,
-          ...savedSettings,
-          profile: {
-            ...prevSettings.profile,
-            ...savedSettings.profile,
-            fullName: user?.user_metadata?.full_name || savedSettings.profile?.fullName || '',
-            company: user?.user_metadata?.company || savedSettings.profile?.company || ''
-          }
-        }));
+      if (data && data.settings) {
+        try {
+          // Merge saved settings with defaults
+          const savedSettings = JSON.parse(data.settings);
+          setSettings(prevSettings => ({
+            ...defaultSettings, // Start with defaults
+            ...savedSettings, // Override with saved settings
+            profile: {
+              ...defaultSettings.profile,
+              ...savedSettings.profile,
+              fullName: user?.user_metadata?.full_name || savedSettings.profile?.fullName || '',
+              company: user?.user_metadata?.company || savedSettings.profile?.company || ''
+            }
+          }));
+        } catch (parseError) {
+          console.warn('Failed to parse saved settings, using defaults with user metadata:', parseError);
+          // Initialize with user metadata if JSON parsing fails
+          setSettings(prevSettings => ({
+            ...defaultSettings,
+            profile: {
+              ...defaultSettings.profile,
+              fullName: user?.user_metadata?.full_name || '',
+              company: user?.user_metadata?.company || ''
+            }
+          }));
+        }
       } else {
         // Initialize with user metadata
         setSettings(prevSettings => ({
-          ...prevSettings,
+          ...defaultSettings,
           profile: {
-            ...prevSettings.profile,
+            ...defaultSettings.profile,
             fullName: user?.user_metadata?.full_name || '',
             company: user?.user_metadata?.company || ''
           }
@@ -200,13 +269,25 @@ export function SettingsProvider({ children, user }: SettingsProviderProps) {
     } catch (err) {
       console.error('Error loading user settings:', err);
       setError(err instanceof Error ? err.message : 'Failed to load settings');
+      // Use defaults with user metadata as fallback
+      setSettings(prevSettings => ({
+        ...defaultSettings,
+        profile: {
+          ...defaultSettings.profile,
+          fullName: user?.user_metadata?.full_name || '',
+          company: user?.user_metadata?.company || ''
+        }
+      }));
     } finally {
       setIsLoading(false);
     }
   };
 
   const saveSettings = async (newSettings: AppSettings) => {
-    if (!user) return;
+    if (!user?.id) {
+      console.warn('Cannot save settings: no user ID');
+      return;
+    }
 
     try {
       const { error: saveError } = await supabase
@@ -215,11 +296,24 @@ export function SettingsProvider({ children, user }: SettingsProviderProps) {
           user_id: user.id,
           settings: JSON.stringify(newSettings),
           updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id'
         });
 
-      if (saveError) throw saveError;
+      if (saveError) {
+        if (saveError.code === '42P01') {
+          console.warn('Cannot save settings: user_settings table does not exist');
+          setError('Settings table not found. Please check database setup.');
+        } else {
+          console.error('Error saving settings to database:', saveError);
+          setError('Failed to save settings. Changes may be lost on refresh.');
+        }
+      } else {
+        // Clear any previous errors on successful save
+        setError(null);
+      }
     } catch (err) {
-      console.error('Error saving settings:', err);
+      console.error('Unexpected error saving settings:', err);
       setError(err instanceof Error ? err.message : 'Failed to save settings');
     }
   };

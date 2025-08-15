@@ -3,6 +3,19 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { User } from '@supabase/supabase-js';
 import { 
+  ApplicationPipeline, 
+  EmailCampaign, 
+  Interview, 
+  Reminder, 
+  AutomationMetrics,
+  ApplicationStatus 
+} from '../../types/automation';
+import RealTimeAutomationEngine from '../../services/realTimeAutomationEngine';
+import AIProposalGenerator from '../../services/aiProposalGenerator';
+import AutomatedEmailService from '../../services/automatedEmailService';
+import AutomatedApplicationService from '../../services/automatedApplicationService';
+import RealTimeNotificationService from '../../services/realTimeNotificationService';
+import { 
   FaRobot, 
   FaChartLine, 
   FaUsers, 
@@ -31,7 +44,6 @@ import {
   FaArrowDown,
   FaClock
 } from 'react-icons/fa';
-import { ApplicationPipeline, AutomationMetrics, Reminder, EmailCampaign, Interview } from '../../types/automation';
 
 interface AutomationDashboardProps {
   user: User;
@@ -45,7 +57,15 @@ export default function AutomationDashboard({ user }: AutomationDashboardProps) 
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [emailCampaigns, setEmailCampaigns] = useState<EmailCampaign[]>([]);
   const [interviews, setInterviews] = useState<Interview[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [automationEngine, setAutomationEngine] = useState<RealTimeAutomationEngine | null>(null);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [systemStatus, setSystemStatus] = useState<any>({
+    automationEngine: 'stopped',
+    proposalGenerator: 'inactive',
+    emailService: 'inactive',
+    applicationService: 'inactive'
+  });
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [isRealTimeEnabled, setIsRealTimeEnabled] = useState(true);
 
@@ -67,7 +87,7 @@ export default function AutomationDashboard({ user }: AutomationDashboardProps) 
 
   const loadAutomationData = async (showLoading = true) => {
     try {
-      if (showLoading) setIsLoading(true);
+      if (showLoading) setLoading(true);
       
       // Simulate real-time data with dynamic values
       const now = Date.now();
@@ -109,7 +129,7 @@ export default function AutomationDashboard({ user }: AutomationDashboardProps) 
           responseReceived: true,
           interviewScheduled: true,
           offerReceived: false,
-          notes: 'Strong technical match, prepare system design questions',
+          notes: ['Strong technical match, prepare system design questions'],
           reminders: []
         },
         {
@@ -132,7 +152,7 @@ export default function AutomationDashboard({ user }: AutomationDashboardProps) 
           responseReceived: false,
           interviewScheduled: false,
           offerReceived: false,
-          notes: 'Automated follow-up scheduled',
+          notes: ['Automated follow-up scheduled'],
           reminders: []
         }
       ];
@@ -273,7 +293,7 @@ export default function AutomationDashboard({ user }: AutomationDashboardProps) 
     } catch (error) {
       console.error('Error loading automation data:', error);
     } finally {
-      if (showLoading) setIsLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 
@@ -375,7 +395,7 @@ export default function AutomationDashboard({ user }: AutomationDashboardProps) 
     { id: 'settings', name: 'Settings', icon: FaCog }
   ];
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center">
         <div className="text-center">

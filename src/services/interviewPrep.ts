@@ -107,7 +107,7 @@ export class InterviewPrepService {
     return [
       {
         question: "Tell me about yourself.",
-        category: 'common',
+        category: 'behavioral',
         difficulty: 'easy',
         suggestedAnswer: `Focus on your professional background, key skills relevant to ${job.title}, and what drives your interest in ${job.industry}. Keep it concise and relevant to the role.`,
         keyPoints: [
@@ -119,7 +119,7 @@ export class InterviewPrepService {
       },
       {
         question: `Why are you interested in this ${job.title} position?`,
-        category: 'common',
+        category: 'behavioral',
         difficulty: 'easy',
         suggestedAnswer: `Highlight how the role aligns with your career goals, mention specific aspects of the job that excite you, and connect your skills to the company's needs.`,
         keyPoints: [
@@ -131,7 +131,7 @@ export class InterviewPrepService {
       },
       {
         question: "What are your greatest strengths?",
-        category: 'common',
+        category: 'behavioral',
         difficulty: 'easy',
         suggestedAnswer: `Choose 2-3 strengths that directly relate to the job requirements. Provide specific examples of how these strengths have led to success in previous roles.`,
         keyPoints: [
@@ -143,7 +143,7 @@ export class InterviewPrepService {
       },
       {
         question: "What is your biggest weakness?",
-        category: 'common',
+        category: 'behavioral',
         difficulty: 'medium',
         suggestedAnswer: `Choose a real weakness that doesn't directly impact the core job requirements. Explain how you're actively working to improve it.`,
         keyPoints: [

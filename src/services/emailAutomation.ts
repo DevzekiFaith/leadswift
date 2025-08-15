@@ -32,8 +32,17 @@ export class EmailAutomationService {
       const campaign: EmailCampaign = {
         id: this.generateId(),
         proposalId: proposal.id,
+        name: `${job.title} - ${job.company}`,
+        targetIndustry: job.industry,
+        template: 'professional_application',
         status: 'draft',
         scheduledDate: scheduleDate || new Date(),
+        scheduled: scheduleDate || new Date(),
+        totalSent: 0,
+        opened: 0,
+        clicked: 0,
+        replied: 0,
+        automationEnabled: true,
         followUpSequence: await this.generateFollowUpSequence(job, user),
         trackingData: this.initializeTracking()
       };

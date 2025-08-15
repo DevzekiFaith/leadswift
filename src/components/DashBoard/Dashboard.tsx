@@ -86,6 +86,7 @@ const sidebarItems = [
 export default function Dashboard({ user }: { user: User }) {
   const [activeSection, setActiveSection] = useState("Leads");
   const [userPlan, setUserPlan] = useState("starter"); // This would come from your database
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Initialize Supabase client
   const supabase = createClient(
@@ -94,7 +95,29 @@ export default function Dashboard({ user }: { user: User }) {
   );
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      // Clear local storage and session storage first
+      localStorage.removeItem('leadswift-cache');
+      localStorage.removeItem('supabase.auth.token');
+      sessionStorage.clear();
+      
+      // Sign out from Supabase
+      const { error } = await supabase.auth.signOut({
+        scope: 'global' // Sign out from all sessions
+      });
+      
+      if (error) {
+        console.error('Error signing out:', error);
+        // Even if there's an error, clear the session locally
+        window.location.reload();
+      }
+      
+      // The auth state change listener in page.tsx will automatically redirect to AuthCard
+    } catch (error) {
+      console.error('Unexpected error during sign out:', error);
+      // Force reload to clear any stuck state
+      window.location.reload();
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -118,105 +141,103 @@ export default function Dashboard({ user }: { user: User }) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex">
-      {/* Sidebar */}
-      <div className="w-72 bg-gray-900/50 backdrop-blur-sm border-r border-gray-700/50 shadow-2xl">
-        {/* Logo */}
-        <div className="p-8 border-b border-gray-700/50">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-primary rounded-xl flex items-center justify-center animate-pulse">
-              <span className="text-white text-xl">⚡</span>
-            </div>
-            <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-gray-700">
-              LeadSwift
-            </h1>
-          </div>
-          <p className="text-gray-400 text-sm mt-2">AI-Powered Client Acquisition</p>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+      {/* Mobile Menu Button */}
+      <button
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-gray-800/80 backdrop-blur-sm rounded-lg border border-gray-700/50 text-white"
+      >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={sidebarOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
+        </svg>
+      </button>
 
-        {/* Navigation */}
-        <nav className="p-6 space-y-3">
-          {sidebarItems.map((item, index) => {
-            const IconComponent = item.icon;
-            return (
+      {/* Sidebar */}
+      <div className={`fixed left-0 top-0 h-full w-64 bg-gray-800/50 backdrop-blur-sm border-r border-gray-700/50 z-40 transform transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="p-4 sm:p-6">
+          <div className="flex items-center gap-2 sm:gap-3 mb-6 sm:mb-8">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-primary rounded-lg sm:rounded-xl flex items-center justify-center">
+              <span className="text-white text-lg sm:text-xl font-bold">L</span>
+            </div>
+            <div>
+              <h1 className="text-lg sm:text-xl font-bold text-white">LeadSwift</h1>
+              <p className="text-gray-400 text-xs sm:text-sm">AI Client Acquisition</p>
+            </div>
+          </div>
+
+          {/* Navigation */}
+          <nav className="space-y-1 sm:space-y-2">
+            {sidebarItems.map((item, index) => (
               <button
                 key={item.name}
-                onClick={() => setActiveSection(item.name)}
-                className={`w-full flex items-center gap-4 px-6 py-4 rounded-xl text-left transition-all duration-300 transform hover:scale-[1.02] group ${activeSection === item.name
-                    ? "bg-gradient-primary text-white shadow-lg shadow-purple-500/25 border border-purple-500/30"
-                    : "text-gray-300 hover:text-white hover:bg-gray-800/50 border border-transparent hover:border-gray-700/50"
-                  }`}
-                style={{ animationDelay: `${index * 50}ms` }}
+                onClick={() => {
+                  setActiveSection(item.name);
+                  setSidebarOpen(false); // Close sidebar on mobile after selection
+                }}
+                className={`w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl transition-all duration-200 text-left text-sm sm:text-base ${
+                  activeSection === item.name
+                    ? "bg-gradient-primary text-white shadow-lg shadow-purple-500/25"
+                    : "text-gray-300 hover:text-white hover:bg-gray-700/50"
+                }`}
               >
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300 ${activeSection === item.name
-                    ? "bg-white/20"
-                    : "bg-gray-700/30 group-hover:bg-gray-600/50"
-                  }`}>
-                  <IconComponent className="text-lg" />
-                </div>
-                <span className="font-semibold">{item.name}</span>
+                <item.icon className="text-lg sm:text-xl" />
+                <span className="font-medium">{item.name}</span>
                 {activeSection === item.name && (
                   <div className="ml-auto w-2 h-2 bg-white rounded-full animate-pulse"></div>
                 )}
               </button>
-            );
-          })}
-        </nav>
+            ))}
+          </nav>
+        </div>
 
-        {/* User Profile */}
-        <div className="absolute bottom-0 w-72 p-6 border-t border-gray-700/50 bg-gray-900/80 backdrop-blur-sm">
-          <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700/50 hover:shadow-lg hover:shadow-purple-500/10 transition-all duration-300">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                {user.email?.charAt(0).toUpperCase()}
+        {/* User Profile Section */}
+        <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 right-4 sm:right-6">
+          <div className="bg-gray-700/30 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-gray-600/50">
+            <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-primary rounded-full flex items-center justify-center">
+                <span className="text-white font-bold text-xs sm:text-sm">
+                  {user?.user_metadata?.full_name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                </span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-white truncate">
-                  {user.email}
+                <p className="text-white font-medium text-xs sm:text-sm truncate">
+                  {user?.user_metadata?.full_name || 'User'}
                 </p>
-                <div className="flex items-center gap-2 mt-1">
-                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                  <p className="text-xs text-gray-300">Pro Plan Active</p>
-                </div>
+                <p className="text-gray-400 text-xs truncate">{user?.email}</p>
               </div>
             </div>
-
-            {/* Quick Stats */}
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              <div className="bg-gray-700/30 rounded-lg p-3 text-center">
-                <div className="text-lg font-bold text-white">127</div>
-                <div className="text-xs text-gray-400">Leads Found</div>
-              </div>
-              <div className="bg-gray-700/30 rounded-lg p-3 text-center">
-                <div className="text-lg font-bold text-white">89</div>
-                <div className="text-xs text-gray-400">Pitches Sent</div>
-              </div>
-            </div>
-
             <button
               onClick={signOut}
-              className="w-full flex items-center justify-center gap-3 py-3 bg-gray-700/50 border border-gray-600 text-gray-300 rounded-xl hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-300 transition-all duration-200 font-medium"
+              className="w-full flex items-center gap-2 px-2 sm:px-3 py-1 sm:py-2 text-gray-300 hover:text-white hover:bg-gray-600/50 rounded-lg transition-all duration-200 text-xs sm:text-sm"
             >
-              <FaSignOutAlt className="text-sm" />
-              Sign Out
+              <FaSignOutAlt className="text-xs sm:text-sm" />
+              <span>Sign Out</span>
             </button>
           </div>
         </div>
       </div>
 
+      {/* Overlay for mobile */}
+      {sidebarOpen && (
+        <div 
+          className="lg:hidden fixed inset-0 bg-black/50 z-30"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Main Content */}
-      <div className="flex-1 overflow-hidden">
-        {/* Header */}
-        <header className="bg-gray-900/50 backdrop-blur-sm border-b border-gray-700/50 px-8 py-6 shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-bold text-white mb-2">
-                {activeSection}
-              </h1>
-              <p className="text-gray-300 text-lg font-medium">
-                🚀 Manage your leads and close deals faster with AI
-              </p>
-            </div>
+      <div className="lg:ml-64 min-h-screen">
+        <div className="p-4 sm:p-6 lg:p-8 pt-16 lg:pt-8">
+          <header className="bg-gray-900/50 backdrop-blur-sm border-b border-gray-700/50 px-4 sm:px-6 lg:px-8 py-4 sm:py-6 shadow-lg rounded-xl mb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2">
+                  {activeSection}
+                </h1>
+                <p className="text-gray-300 text-sm sm:text-base lg:text-lg font-medium">
+                  🚀 Manage your leads and close deals faster with AI
+                </p>
+              </div>
             <div className="flex items-center gap-4">
               <button className="flex items-center gap-3 px-6 py-3 bg-gray-700/50 border border-gray-600 text-gray-300 rounded-xl hover:bg-gray-600/50 hover:border-gray-500 hover:text-white transition-all duration-200 font-semibold">
                 <FaPlus className="text-lg" />
@@ -231,38 +252,37 @@ export default function Dashboard({ user }: { user: User }) {
           </div>
         </header>
 
-        {/* Content Area */}
-        <main className="h-full overflow-hidden">
+          {/* Content Area */}
           {activeSection === "Leads" && (
-            <div className="p-8 h-full overflow-y-auto bg-gradient-to-br from-gray-900 via-gray-800 to-black">
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="p-4 sm:p-6 lg:p-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
                 {mockLeads.map((lead) => (
                   <div
                     key={lead.id}
-                    className="bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-6 shadow-2xl hover:shadow-purple-500/10 transition-all duration-300 transform hover:scale-[1.02] group"
+                    className="bg-gray-800/50 backdrop-blur-sm rounded-xl sm:rounded-2xl border border-gray-700/50 p-4 sm:p-6 shadow-2xl hover:shadow-purple-500/10 transition-all duration-300 transform hover:scale-[1.02] group"
                   >
                     {/* Lead Header */}
-                    <div className="flex items-start justify-between mb-6">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center text-2xl shadow-lg">
+                    <div className="flex items-start justify-between mb-4 sm:mb-6">
+                      <div className="flex items-center gap-2 sm:gap-4">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-primary rounded-lg sm:rounded-xl flex items-center justify-center text-lg sm:text-2xl shadow-lg">
                           {getCountryFlag(lead.country)}
                         </div>
                         <div>
-                          <h3 className="text-lg font-bold text-white group-hover:text-purple-300 transition-colors">{lead.name}</h3>
-                          <p className="text-sm text-gray-300 font-medium">{lead.company}</p>
+                          <h3 className="text-base sm:text-lg font-bold text-white group-hover:text-purple-300 transition-colors">{lead.name}</h3>
+                          <p className="text-xs sm:text-sm text-gray-300 font-medium">{lead.company}</p>
                         </div>
                       </div>
-                      <span className={`px-3 py-2 rounded-xl text-xs font-bold shadow-lg ${getStatusColor(lead.status)}`}>
+                      <span className={`px-2 sm:px-3 py-1 sm:py-2 rounded-lg sm:rounded-xl text-xs font-bold shadow-lg ${getStatusColor(lead.status)}`}>
                         {lead.status}
                       </span>
                     </div>
 
                     {/* Lead Details */}
-                    <div className="space-y-4 mb-6">
-                      <div className="bg-gray-700/30 rounded-xl p-4">
+                    <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
+                      <div className="bg-gray-700/30 rounded-lg sm:rounded-xl p-3 sm:p-4">
                         <div className="flex justify-between items-center">
-                          <span className="text-gray-400 text-sm font-medium">⚡ Interest Level:</span>
-                          <span className="font-bold text-white text-lg">{lead.interestLevel}%</span>
+                          <span className="text-gray-400 text-xs sm:text-sm font-medium">⚡ Interest Level:</span>
+                          <span className="font-bold text-white text-base sm:text-lg">{lead.interestLevel}%</span>
                         </div>
                         <div className="w-full bg-gray-600 rounded-full h-3 mt-2 overflow-hidden">
                           <div
@@ -274,14 +294,14 @@ export default function Dashboard({ user }: { user: User }) {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-gray-700/30 rounded-xl p-3">
-                          <div className="text-xs text-gray-400 mb-1">💰 Budget</div>
-                          <div className="font-semibold text-white text-sm">{lead.budget}</div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                        <div className="bg-gray-700/30 rounded-lg sm:rounded-xl p-3 sm:p-4">
+                          <div className="text-xs sm:text-sm text-gray-400 mb-1">💰 Budget</div>
+                          <div className="font-semibold text-white text-sm sm:text-base">{lead.budget}</div>
                         </div>
-                        <div className="bg-gray-700/30 rounded-xl p-3">
-                          <div className="text-xs text-gray-400 mb-1">🏢 Industry</div>
-                          <div className="font-semibold text-white text-sm">{lead.industry}</div>
+                        <div className="bg-gray-700/30 rounded-lg sm:rounded-xl p-3 sm:p-4">
+                          <div className="text-xs sm:text-sm text-gray-400 mb-1">🏢 Industry</div>
+                          <div className="font-semibold text-white text-sm sm:text-base">{lead.industry}</div>
                         </div>
                       </div>
                     </div>
@@ -289,25 +309,25 @@ export default function Dashboard({ user }: { user: User }) {
                     {/* Action Button */}
                     <button
                       onClick={() => setActiveSection("Pitch Composer")}
-                      className="w-full flex items-center justify-center gap-3 py-4 bg-gradient-primary text-white rounded-xl font-bold hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300 transform hover:scale-[1.05] relative overflow-hidden group"
+                      className="w-full flex items-center justify-center gap-2 sm:gap-3 py-3 sm:py-4 bg-gradient-primary text-white rounded-lg sm:rounded-xl font-bold hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300 transform hover:scale-[1.02] relative overflow-hidden group text-sm sm:text-base"
                     >
                       <div className="absolute inset-0 bg-white/10 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-                      <FaRocket className="text-lg relative z-10" />
+                      <FaRocket className="text-base sm:text-lg relative z-10" />
                       <span className="relative z-10">Create Pitch</span>
                     </button>
                   </div>
                 ))}
 
                 {/* Add New Lead Card */}
-                <div className="bg-gray-800/30 backdrop-blur-sm border-2 border-dashed border-gray-600 rounded-2xl p-8 flex flex-col items-center justify-center text-center hover:border-purple-500 hover:bg-gray-700/30 transition-all duration-300 cursor-pointer group">
-                  <div className="w-16 h-16 bg-gradient-primary rounded-2xl flex items-center justify-center mb-6 animate-pulse shadow-lg shadow-purple-500/25">
-                    <FaSearch className="text-white text-2xl" />
+                <div className="bg-gray-800/30 backdrop-blur-sm border-2 border-dashed border-gray-600 rounded-xl sm:rounded-2xl p-6 sm:p-8 flex flex-col items-center justify-center text-center hover:border-purple-500 hover:bg-gray-700/30 transition-all duration-300 cursor-pointer group">
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-primary rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 sm:mb-6 animate-pulse shadow-lg shadow-purple-500/25">
+                    <FaSearch className="text-white text-xl sm:text-2xl" />
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-3 group-hover:text-purple-300 transition-colors">Discover New Leads</h3>
-                  <p className="text-sm text-gray-300 mb-6 font-medium">🌍 Use AI to find your next high-value global clients</p>
+                  <h3 className="text-lg sm:text-xl font-bold text-white mb-2 sm:mb-3 group-hover:text-purple-300 transition-colors">Discover New Leads</h3>
+                  <p className="text-xs sm:text-sm text-gray-300 mb-4 sm:mb-6 font-medium">🌍 Use AI to find your next high-value global clients</p>
                   <button
                     onClick={() => setActiveSection("Lead Discovery")}
-                    className="px-6 py-3 bg-gradient-primary text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300 transform hover:scale-[1.05] relative overflow-hidden group"
+                    className="px-4 sm:px-6 py-2 sm:py-3 bg-gradient-primary text-white rounded-lg sm:rounded-xl font-semibold hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300 transform hover:scale-[1.05] relative overflow-hidden group text-sm sm:text-base"
                   >
                     <div className="absolute inset-0 bg-white/10 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
                     <span className="relative z-10">✨ Start Discovery</span>
@@ -352,7 +372,7 @@ export default function Dashboard({ user }: { user: User }) {
           {activeSection === "Settings" && (
             <Settings user={user} />
           )}
-        </main>
+        </div>
       </div>
 
       {/* AI Assistant */}

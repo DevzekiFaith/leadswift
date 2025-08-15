@@ -242,7 +242,7 @@ export interface ApplicationPipeline {
   offerReceived: boolean;
   nextAction: string;
   nextActionDate?: Date;
-  notes?: string;
+  notes: string[];
   automationEnabled: boolean;
   stages: PipelineStage[];
   currentStage: string;

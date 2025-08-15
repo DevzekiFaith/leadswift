@@ -1,40 +1,137 @@
 import { useState } from "react";
 import { supabase } from "../../../lib/supabaseClient";
-import { FaGoogle, FaEye, FaEyeSlash } from "react-icons/fa";
+import { FaGoogle, FaEye, FaEyeSlash, FaExclamationTriangle } from "react-icons/fa";
 
 export default function AuthCard() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [showResendConfirmation, setShowResendConfirmation] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const handleAuth = async () => {
+    if (!email || !password) {
+      setError('Please enter both email and password');
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      return;
+    }
+
     setLoading(true);
+    setError(null);
+    setSuccess(null);
+    
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({ email, password });
+        const { data, error } = await supabase.auth.signUp({ 
+          email: email.trim().toLowerCase(), 
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback`
+          }
+        });
+        
         if (error) throw error;
-        alert("Check your email for the confirmation link!");
+        
+        if (data.user && !data.session) {
+          setSuccess("Check your email for the confirmation link!");
+          setShowResendConfirmation(true);
+        } else {
+          setSuccess("Account created successfully!");
+        }
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({ 
+          email: email.trim().toLowerCase(), 
+          password 
+        });
         if (error) throw error;
+        setSuccess("Signed in successfully!");
       }
     } catch (error: any) {
-      alert(error.message);
+      console.error('Auth error:', error);
+      
+      // Handle specific error cases
+      if (error.message?.includes('Invalid login credentials')) {
+        setError('Invalid email or password. Please check your credentials.');
+      } else if (error.message?.includes('Email not confirmed')) {
+        setError('Please check your email and click the confirmation link before signing in.');
+        setShowResendConfirmation(true);
+      } else if (error.message?.includes('User already registered')) {
+        setError('An account with this email already exists. Try signing in instead.');
+      } else if (error.message?.includes('Invalid email')) {
+        setError('Please enter a valid email address.');
+      } else {
+        setError(error.message || 'An unexpected error occurred. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const signInWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: window.location.origin
-      }
-    });
-    if (error) alert(error.message);
+    setError(null);
+    setSuccess(null);
+    
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
+        }
+      });
+      
+      if (error) throw error;
+    } catch (error: any) {
+      console.error('Google auth error:', error);
+      setError(error.message || 'Failed to sign in with Google. Please try again.');
+    }
+  };
+
+  const resendConfirmation = async () => {
+    if (!email) {
+      setError('Please enter your email address');
+      return;
+    }
+
+    setResendLoading(true);
+    setError(null);
+    
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email.trim().toLowerCase(),
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`
+        }
+      });
+      
+      if (error) throw error;
+      setSuccess('Confirmation email sent! Check your inbox and spam folder.');
+    } catch (error: any) {
+      console.error('Resend confirmation error:', error);
+      setError(error.message || 'Failed to resend confirmation email. Please try again.');
+    } finally {
+      setResendLoading(false);
+    }
+  };
+
+  const handleToggleMode = () => {
+    setIsSignUp(!isSignUp);
+    setError(null);
+    setSuccess(null);
+    setPassword('');
+    setShowResendConfirmation(false);
   };
 
   return (
@@ -77,22 +174,65 @@ export default function AuthCard() {
               </div>
             </div>
 
+            {/* Success Message */}
+            {success && (
+              <div className="p-4 bg-green-100 border border-green-400 text-green-700 rounded-xl">
+                <div className="flex items-center">
+                  <span className="text-green-500 mr-2">✅</span>
+                  {success}
+                </div>
+              </div>
+            )}
+
+            {/* Resend Confirmation Button */}
+            {showResendConfirmation && (
+              <div className="text-center">
+                <p className="text-gray-400 text-sm mb-3">
+                  Didn't receive the email? Check your spam folder or
+                </p>
+                <button
+                  onClick={resendConfirmation}
+                  disabled={resendLoading}
+                  className="text-purple-400 hover:text-purple-300 underline text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {resendLoading ? 'Sending...' : 'Resend confirmation email'}
+                </button>
+              </div>
+            )}
+            
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-center gap-3">
+                <FaExclamationTriangle className="text-red-400 text-lg flex-shrink-0" />
+                <p className="text-red-300 text-sm">{error}</p>
+              </div>
+            )}
+
             {/* Email/Password Form */}
             <div className="space-y-5">
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setError(null);
+                }}
                 placeholder="Enter your email"
                 className="w-full px-6 py-4 bg-gray-700/50 border border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all text-white placeholder-gray-400 text-lg"
+                disabled={loading}
               />
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setError(null);
+                  }}
+                  placeholder={isSignUp ? "Create a password (min 6 characters)" : "Enter your password"}
                   className="w-full px-6 py-4 pr-14 bg-gray-700/50 border border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all text-white placeholder-gray-400 text-lg"
+                  disabled={loading}
+                  minLength={6}
                 />
                 <button
                   type="button"
@@ -109,7 +249,7 @@ export default function AuthCard() {
 
               <button
                 onClick={handleAuth}
-                disabled={loading || !email || !password}
+                disabled={loading || !email || !password || password.length < 6}
                 className="w-full py-4 px-6 bg-gradient-primary text-white font-bold text-lg rounded-xl hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none relative overflow-hidden group"
               >
                 <div className="absolute inset-0 bg-white/10 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
@@ -127,8 +267,9 @@ export default function AuthCard() {
             {/* Toggle Sign Up/Sign In */}
             <div className="text-center">
               <button
-                onClick={() => setIsSignUp(!isSignUp)}
-                className="text-sm text-gray-300 hover:text-white hover:underline transition-colors font-medium"
+                onClick={handleToggleMode}
+                disabled={loading}
+                className="text-sm text-gray-300 hover:text-white hover:underline transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSignUp
                   ? "Already have an account? Sign In"
